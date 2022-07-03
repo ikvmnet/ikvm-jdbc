@@ -1,4 +1,4 @@
-# IKVM.JDbc
+# IKVM.Jdbc
 
 ## IKVM.Jdbc.Data
 
