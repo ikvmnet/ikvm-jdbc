@@ -1,0 +1,44 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32519.379
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{7271F8CF-C4EC-47FE-91F3-FF3331482C4F}"
+	ProjectSection(SolutionItems) = preProject
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		Directory.Build.props = Directory.Build.props
+		Directory.Build.targets = Directory.Build.targets
+		GitVersion.yml = GitVersion.yml
+		global.json = global.json
+		IKVM.Jdbc.artifacts.msbuildproj = IKVM.Jdbc.artifacts.msbuildproj
+		LICENSE.md = LICENSE.md
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Jdbc.Data", "src\IKVM.Jdbc.Data\IKVM.Jdbc.Data.csproj", "{4047D9DE-D7F4-4A8E-8583-0C2AE07399B4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IKVM.Jdbc.Data.Tests", "src\IKVM.Jdbc.Data.Tests\IKVM.Jdbc.Data.Tests.csproj", "{50AB3A13-DF6B-45B4-BBA4-94429C2A7941}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4047D9DE-D7F4-4A8E-8583-0C2AE07399B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4047D9DE-D7F4-4A8E-8583-0C2AE07399B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4047D9DE-D7F4-4A8E-8583-0C2AE07399B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4047D9DE-D7F4-4A8E-8583-0C2AE07399B4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{50AB3A13-DF6B-45B4-BBA4-94429C2A7941}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{50AB3A13-DF6B-45B4-BBA4-94429C2A7941}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{50AB3A13-DF6B-45B4-BBA4-94429C2A7941}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{50AB3A13-DF6B-45B4-BBA4-94429C2A7941}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {FF4B3820-4206-4316-82A5-DEA5792C6A71}
+	EndGlobalSection
+EndGlobal
