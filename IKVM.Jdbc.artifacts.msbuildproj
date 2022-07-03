@@ -19,15 +19,15 @@
             <Properties>$(PackProperties);PackageOutputPath=$(ArtifactStagingDirectory)\nuget</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>IKVM_Jdbc_Data_Tasks_Tests:Publish</Targets>
+            <Targets>IKVM_Jdbc_Data_Tests:Publish</Targets>
             <Properties>$(TestProperties);TargetFramework=net462;PublishDir=$(ArtifactStagingDirectory)\tests\IKVM.Jdbc.Data.Tests\net472</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>IKVM_Jdbc_Data_Tasks_Tests:Publish</Targets>
+            <Targets>IKVM_Jdbc_Data_Tests:Publish</Targets>
             <Properties>$(TestProperties);TargetFramework=netcoreapp3.1;PublishDir=$(ArtifactStagingDirectory)\tests\IKVM.Jdbc.Data.Tests\netcoreapp3.1</Properties>
         </TargetsForPublish>
         <TargetsForPublish Include="$(SolutionFile)">
-            <Targets>IKVM_Jdbc_Data_Tasks_Tests:Publish</Targets>
+            <Targets>IKVM_Jdbc_Data_Tests:Publish</Targets>
             <Properties>$(TestProperties);TargetFramework=net6.0;PublishDir=$(ArtifactStagingDirectory)\tests\IKVM.Jdbc.Data.Tests\net6.0</Properties>
         </TargetsForPublish>
     </ItemGroup>
