@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Data.Common;
-using System.Threading.Tasks;
 using System.Xml.Linq;
 
 using java.sql;
@@ -190,7 +189,7 @@ namespace IKVM.Jdbc.Data
                 throw new NotSupportedException();
 
             if (type == JDBCType.TIME.ordinal())
-                return typeof(DateTime);
+                return typeof(TimeSpan);
 
             if (type == JDBCType.TIMESTAMP.ordinal())
                 return typeof(DateTime);
@@ -258,7 +257,6 @@ namespace IKVM.Jdbc.Data
         /// <param name="ordinal"></param>
         /// <returns></returns>
         /// <exception cref="NotSupportedException"></exception>
-        /// <exception cref="NotImplementedException"></exception>
         public override object GetValue(int ordinal)
         {
             if (ordinal < 0)
@@ -295,7 +293,7 @@ namespace IKVM.Jdbc.Data
             if (type == JDBCType.BLOB.ordinal())
             {
                 var v = rs.getBlob(ordinal);
-                return rs.wasNull() ? DBNull.Value : v.getBytes(0, (int)v.length());
+                return rs.wasNull() ? DBNull.Value : v;
             }
 
             if (type == JDBCType.BOOLEAN.ordinal())
@@ -313,7 +311,7 @@ namespace IKVM.Jdbc.Data
             if (type == JDBCType.CLOB.ordinal())
             {
                 var v = rs.getClob(ordinal);
-                return rs.wasNull() ? DBNull.Value : v.getSubString(0, (int)v.length());
+                return rs.wasNull() ? DBNull.Value : v;
             }
 
             if (type == JDBCType.DATALINK.ordinal())
@@ -389,7 +387,7 @@ namespace IKVM.Jdbc.Data
             if (type == JDBCType.NCLOB.ordinal())
             {
                 var v = rs.getNClob(ordinal);
-                return rs.wasNull() ? DBNull.Value : v.getSubString(0, (int)v.length());
+                return rs.wasNull() ? DBNull.Value : v;
             }
 
             if (type == JDBCType.NULL.ordinal())
@@ -400,6 +398,8 @@ namespace IKVM.Jdbc.Data
             if (type == JDBCType.NUMERIC.ordinal())
             {
                 throw new NotImplementedException();
+                //var v = rs.getBigDecimal(ordinal);
+                //return rs.wasNull() ? DBNull.Value : v;
             }
 
             if (type == JDBCType.NVARCHAR.ordinal())
@@ -443,7 +443,7 @@ namespace IKVM.Jdbc.Data
             if (type == JDBCType.SQLXML.ordinal())
             {
                 var v = rs.getSQLXML(ordinal);
-                return rs.wasNull() ? DBNull.Value : XDocument.Parse(v.getString());
+                return rs.wasNull() ? DBNull.Value : v;
             }
 
             if (type == JDBCType.STRUCT.ordinal())
@@ -454,7 +454,7 @@ namespace IKVM.Jdbc.Data
             if (type == JDBCType.TIME.ordinal())
             {
                 var v = rs.getTime(ordinal);
-                return rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(v.getTime()).UtcDateTime;
+                return rs.wasNull() ? DBNull.Value : TimeSpan.FromMilliseconds(v.getTime());
             }
 
             if (type == JDBCType.TIMESTAMP.ordinal())
@@ -506,10 +506,11 @@ namespace IKVM.Jdbc.Data
             if (values is null)
                 throw new ArgumentNullException(nameof(values));
 
-            for (int i = 0; i < rs.getMetaData().getColumnCount(); i++)
+            var n = rs.getMetaData().getColumnCount();
+            for (int i = 0; i < n; i++)
                 values[i] = GetValue(i);
 
-            return rs.getMetaData().getColumnCount();
+            return n;
         }
 
         /// <summary>
@@ -556,15 +557,34 @@ namespace IKVM.Jdbc.Data
         /// <exception cref="JdbcException"></exception>
         public override long GetBytes(int ordinal, long dataOffset, byte[] buffer, int bufferOffset, int length)
         {
-            var b = (byte[])GetValue(ordinal);
-            if (b == null)
-                throw new JdbcException("Null bytes.");
+            return GetBytes(ordinal, dataOffset, buffer.AsSpan().Slice(bufferOffset, length));
+        }
 
-            var c = 0;
-            for (int i = (int)dataOffset; i < b.Length && c < length; i++, c++)
-                buffer[bufferOffset + i] = b[i];
-
-            return c;
+        /// <summary>
+        /// Reads a stream of bytes from the specified column, starting at location indicated by <paramref name="dataOffset"/>, into the
+        /// <see cref="Span{Byte}"/>.
+        /// </summary>
+        /// <param name="ordinal"></param>
+        /// <param name="dataOffset"></param>
+        /// <param name="buffer"></param>
+        /// <returns></returns>
+        public long GetBytes(int ordinal, long dataOffset, Span<byte> buffer)
+        {
+            var v = GetValue(ordinal);
+            switch (v)
+            {
+                case null:
+                case DBNull:
+                    throw new JdbcException("Could not write null value to string.");
+                case byte[] c:
+                    var _2 = c.AsSpan().Slice((int)dataOffset);
+                    _2.CopyTo(buffer);
+                    return Math.Min(_2.Length, buffer.Length);
+                case Blob n:
+                    throw new NotImplementedException($"Could not convert blob into bytes.");
+                default:
+                    throw new JdbcException($"Could not convert {v.GetType()} into string.");
+            }
         }
 
         /// <summary>
@@ -590,15 +610,39 @@ namespace IKVM.Jdbc.Data
         /// <exception cref="JdbcException"></exception>
         public override long GetChars(int ordinal, long dataOffset, char[] buffer, int bufferOffset, int length)
         {
-            var b = (char[])GetValue(ordinal);
-            if (b == null)
-                throw new JdbcException("Null chars.");
+            return GetChars(ordinal, dataOffset, buffer.AsSpan(bufferOffset, length));
+        }
 
-            var c = 0;
-            for (int i = (int)dataOffset; i < b.Length && c < length; i++, c++)
-                buffer[bufferOffset + i] = b[i];
-
-            return c;
+        /// <summary>
+        /// Reads a stream of bytes from the specified column, starting at location indicated by <paramref name="dataOffset"/>, into the
+        /// <see cref="Span{Char}"/>.
+        /// </summary>
+        /// <param name="ordinal"></param>
+        /// <param name="dataOffset"></param>
+        /// <param name="buffer"></param>
+        /// <returns></returns>
+        public long GetChars(int ordinal, long dataOffset, Span<char> buffer)
+        {
+            var v = GetValue(ordinal);
+            switch (v)
+            {
+                case null:
+                case DBNull:
+                    throw new JdbcException("Could not write null value to string.");
+                case string s:
+                    var _1 = s.AsSpan().Slice((int)dataOffset);
+                    _1.CopyTo(buffer);
+                    return Math.Min(_1.Length, buffer.Length);
+                case char[] c:
+                    var _2 = c.AsSpan().Slice((int)dataOffset);
+                    _2.CopyTo(buffer);
+                    return Math.Min(_2.Length, buffer.Length);
+                case NClob n:
+                case Clob c:
+                    throw new NotImplementedException($"Could not convert (n)clob into string.");
+                default:
+                    throw new JdbcException($"Could not convert {v.GetType()} into string.");
+            }
         }
 
         /// <summary>
@@ -688,7 +732,14 @@ namespace IKVM.Jdbc.Data
         /// <returns></returns>
         public override string GetString(int ordinal)
         {
-            return (string)GetValue(ordinal);
+            var v = GetValue(ordinal);
+            return v switch
+            {
+                string s => s,
+                NClob nclob => throw new NotImplementedException(),
+                Clob clob => throw new NotImplementedException(),
+                _ => throw new JdbcException($"Could not convert {v.GetType()} into string."),
+            };
         }
 
         /// <summary>
@@ -697,6 +748,9 @@ namespace IKVM.Jdbc.Data
         /// <returns></returns>
         public override bool Read()
         {
+            if (rs == null)
+                throw new JdbcException("JdbcReader is closed.");
+
             return rs.next();
         }
 
@@ -713,10 +767,9 @@ namespace IKVM.Jdbc.Data
         }
 
         /// <summary>
-        /// Releases all resources used by the current instance of the <see cref="JdbcDataReaderBase"/> class.
+        /// Closes the <see cref="JdbcDataReader"/> object.
         /// </summary>
-        /// <param name="disposing"></param>
-        protected override void Dispose(bool disposing)
+        public override void Close()
         {
             if (rs != null)
             {
@@ -726,29 +779,8 @@ namespace IKVM.Jdbc.Data
                 recordsAffected = 0;
             }
 
-            base.Dispose(disposing);
+            base.Close();
         }
-
-#if NETCOREAPP
-
-        /// <summary>
-        /// Asynchronously releases all resources used by the current instance of the <see cref="JdbcDataReaderBase"/> class.
-        /// </summary>
-        /// <returns></returns>
-        public override ValueTask DisposeAsync()
-        {
-            if (rs != null)
-            {
-                rs.close();
-                rs = null;
-                hasRows = false;
-                recordsAffected = 0;
-            }
-
-            return base.DisposeAsync();
-        }
-
-#endif
 
     }
 
