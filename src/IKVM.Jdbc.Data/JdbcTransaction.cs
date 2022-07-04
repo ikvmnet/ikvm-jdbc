@@ -19,6 +19,7 @@ namespace IKVM.Jdbc.Data
         /// Initializes a new instance.
         /// </summary>
         /// <param name="connection"></param>
+        /// <param name="isolationLevel"></param>
         internal JdbcTransaction(JdbcConnection connection, IsolationLevel isolationLevel)
         {
             this.connection = connection ?? throw new ArgumentNullException(nameof(connection));
@@ -45,6 +46,11 @@ namespace IKVM.Jdbc.Data
         }
 
         /// <summary>
+        /// Gets the connection associated to this transaction.
+        /// </summary>
+        protected override DbConnection DbConnection => connection;
+
+        /// <summary>
         /// Gets the isolation level of the current transaction.
         /// </summary>
         public override IsolationLevel IsolationLevel => connection.connection.getTransactionIsolation() switch
@@ -56,8 +62,6 @@ namespace IKVM.Jdbc.Data
             java.sql.Connection.TRANSACTION_SERIALIZABLE => IsolationLevel.Serializable,
             _ => throw new JdbcException($"Unrecognized transaction value.")
         };
-
-        protected override DbConnection DbConnection => throw new NotImplementedException();
 
         /// <summary>
         /// Commmits the current transaction.

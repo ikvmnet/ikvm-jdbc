@@ -28,6 +28,15 @@ namespace IKVM.Jdbc.Data
         }
 
         /// <summary>
+        /// Gets the connection associated with this command.
+        /// </summary>
+        public new JdbcConnection Connection
+        {
+            get => (JdbcConnection)base.Connection;
+            set => base.Connection = value;
+        }
+
+        /// <summary>
         /// Gets the collection of <see cref="JdbcParameter"/> objects.
         /// </summary>
         public new JdbcParameterCollection Parameters
@@ -45,11 +54,11 @@ namespace IKVM.Jdbc.Data
         }
 
         /// <summary>
-        /// Executes the command against its connection, returning a <see cref="JdbcDataReader"/> which can be used to access the results.
+        /// Executes the command against its connection, returning a <see cref="JdbcDataReaderBase"/> which can be used to access the results.
         /// </summary>
         /// <param name="behavior"></param>
         /// <returns></returns>
-        public new JdbcDataReader ExecuteDataReader(CommandBehavior behavior)
+        public JdbcDataReader ExecuteDataReader(CommandBehavior behavior)
         {
             return ExecuteJdbcDataReader(behavior);
         }
