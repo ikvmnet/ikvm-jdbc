@@ -8,7 +8,7 @@ namespace IKVM.Jdbc.Data
 {
 
     /// <summary>
-    /// The base class for a collection of parameters relevant to a <see cref="JdbcCommand"/>.
+    /// The base class for a collection of parameters relevant to a <see cref="JdbcCommandBase"/>.
     /// </summary>
     public abstract class JdbcParameterCollectionBase : DbParameterCollection
     {
@@ -18,7 +18,7 @@ namespace IKVM.Jdbc.Data
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        public JdbcParameterCollectionBase()
+        internal JdbcParameterCollectionBase()
         {
 
         }

@@ -4,7 +4,7 @@ namespace IKVM.Jdbc.Data
 {
 
     /// <summary>
-    /// Collection of parameters relevant to a <see cref="JdbcCommand"/>.
+    /// Collection of parameters relevant to a <see cref="JdbcCommandBase"/>.
     /// </summary>
     public class JdbcParameterCollection : JdbcParameterCollectionBase, IList<JdbcParameter>
     {

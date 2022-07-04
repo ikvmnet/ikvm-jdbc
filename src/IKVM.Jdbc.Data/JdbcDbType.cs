@@ -29,7 +29,7 @@ namespace IKVM.Jdbc.Data
             DbType.DateTime => JDBCType.TIMESTAMP,
             DbType.Decimal => JDBCType.DECIMAL,
             DbType.Double => JDBCType.DOUBLE,
-            DbType.Guid => JDBCType.CHAR,
+            DbType.Guid => JDBCType.VARCHAR,
             DbType.Int16 => JDBCType.SMALLINT,
             DbType.Int32 => JDBCType.INTEGER,
             DbType.Int64 => JDBCType.BIGINT,
