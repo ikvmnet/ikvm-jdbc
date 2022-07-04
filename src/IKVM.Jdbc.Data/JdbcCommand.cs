@@ -48,19 +48,28 @@ namespace IKVM.Jdbc.Data
         /// Creates a new instance of a <see cref="JdbcParameter"/> object.
         /// </summary>
         /// <returns></returns>
-        public new JdbcParameter CreateDbParameter()
+        public new JdbcParameter CreateParameter()
         {
-            return CreateJdbcParameter();
+            return (JdbcParameter)base.CreateParameter();
         }
 
         /// <summary>
-        /// Executes the command against its connection, returning a <see cref="JdbcDataReaderBase"/> which can be used to access the results.
+        /// Executes the command against its connection, returning a <see cref="JdbcDataReader"/> which can be used to access the results.
         /// </summary>
         /// <param name="behavior"></param>
         /// <returns></returns>
-        public JdbcDataReader ExecuteDataReader(CommandBehavior behavior)
+        public new JdbcDataReader ExecuteReader(CommandBehavior behavior)
         {
-            return ExecuteJdbcDataReader(behavior);
+            return (JdbcDataReader)base.ExecuteReader(behavior);
+        }
+
+        /// <summary>
+        /// Executes the command against its connection, returning a <see cref="JdbcDataReader"/> which can be used to access the results.
+        /// </summary>
+        /// <returns></returns>
+        public new JdbcDataReader ExecuteReader()
+        {
+            return (JdbcDataReader)base.ExecuteReader();
         }
 
     }
