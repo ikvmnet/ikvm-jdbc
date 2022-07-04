@@ -76,15 +76,6 @@ namespace IKVM.Jdbc.Data
         /// <returns></returns>
         public override IEnumerator GetEnumerator()
         {
-            return GetJdbcEnumerator();
-        }
-
-        /// <summary>
-        /// Gets an <see cref="IEnumerator"/> that can be used to iterate through the rows in the <see cref="JdbcDataReaderBase"/>.
-        /// </summary>
-        /// <returns></returns>
-        internal JdbcEnumerator GetJdbcEnumerator()
-        {
             return new JdbcEnumerator(this);
         }
 

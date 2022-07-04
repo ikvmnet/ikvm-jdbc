@@ -41,7 +41,7 @@ namespace IKVM.Jdbc.Data
         /// </summary>
         public new JdbcParameterCollection Parameters
         {
-            get => JdbcParameters;
+            get => (JdbcParameterCollection)base.Parameters;
         }
 
         /// <summary>

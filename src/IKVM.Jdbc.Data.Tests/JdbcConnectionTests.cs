@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 using FluentAssertions;
-
-using java.lang;
-using java.sql;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 

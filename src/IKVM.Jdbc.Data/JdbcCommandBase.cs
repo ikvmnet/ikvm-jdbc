@@ -108,12 +108,7 @@ namespace IKVM.Jdbc.Data
         /// <summary>
         /// Gets the collection of <see cref="DbParameter"/> objects.
         /// </summary>
-        protected override DbParameterCollection DbParameterCollection => JdbcParameters;
-
-        /// <summary>
-        /// Gets the collection of <see cref="DbParameter"/> objects.
-        /// </summary>
-        protected JdbcParameterCollection JdbcParameters => parameters;
+        protected override DbParameterCollection DbParameterCollection => parameters;
 
         /// <summary>
         /// Gets or sets the <see cref="DbTransaction"/> within which this <see cref="JdbcCommandBase"/> object executes.
@@ -125,15 +120,6 @@ namespace IKVM.Jdbc.Data
         /// </summary>
         /// <returns></returns>
         protected override DbParameter CreateDbParameter()
-        {
-            return CreateJdbcParameter();
-        }
-
-        /// <summary>
-        /// Creates a new instance of a <see cref="JdbcParameter"/> object.
-        /// </summary>
-        /// <returns></returns>
-        protected JdbcParameter CreateJdbcParameter()
         {
             if (prepared != null)
                 throw new JdbcException("Command is already prepared.");
@@ -350,16 +336,6 @@ namespace IKVM.Jdbc.Data
         /// <param name="behavior"></param>
         /// <returns></returns>
         protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)
-        {
-            return ExecuteJdbcDataReader(behavior);
-        }
-
-        /// <summary>
-        /// Executes the command against its connection, returning a <see cref="DbDataReader"/> which can be used to access the results.
-        /// </summary>
-        /// <param name="behavior"></param>
-        /// <returns></returns>
-        protected JdbcDataReader ExecuteJdbcDataReader(CommandBehavior behavior)
         {
             return ExecutingLock(() =>
             {

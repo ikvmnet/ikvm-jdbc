@@ -29,7 +29,7 @@ namespace IKVM.Jdbc.Data
         /// <returns></returns>
         public new IEnumerator<IDataRecord> GetEnumerator()
         {
-            return GetJdbcEnumerator();
+            return (JdbcEnumerator)base.GetEnumerator();
         }
 
     }
