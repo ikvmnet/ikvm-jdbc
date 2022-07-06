@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace IKVM.Jdbc.Data.Extensions
+namespace IKVM.Jdbc.Data.Internal
 {
 
     /// <summary>

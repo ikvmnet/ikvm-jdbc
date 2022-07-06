@@ -1,6 +1,6 @@
 ﻿using java.io;
 
-namespace IKVM.Jdbc.Data.Extensions
+namespace IKVM.Jdbc.Data.Internal
 {
 
     /// <summary>
