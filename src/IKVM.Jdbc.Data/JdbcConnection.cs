@@ -171,12 +171,8 @@ namespace IKVM.Jdbc.Data
             {
                 var props = new java.util.Properties();
                 foreach (KeyValuePair<string, object> entry in connectionStringBuilder)
-                    if (string.Equals(entry.Key, "Url", StringComparison.OrdinalIgnoreCase) == false)
+                    if (string.Equals(entry.Key, "url", StringComparison.OrdinalIgnoreCase) == false)
                         props.setProperty(entry.Key, entry.Value.ToString());
-
-                var l = DriverManager.getDrivers();
-                while (l.hasMoreElements())
-                    System.Console.WriteLine(l.nextElement());
 
                 connection = DriverManager.getConnection(connectionStringBuilder.Url, props);
             }

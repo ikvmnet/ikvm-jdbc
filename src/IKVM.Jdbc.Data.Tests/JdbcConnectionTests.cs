@@ -2,6 +2,8 @@
 
 using FluentAssertions;
 
+using java.sql;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IKVM.Jdbc.Data.Tests
@@ -14,7 +16,9 @@ namespace IKVM.Jdbc.Data.Tests
         [TestMethod]
         public void Can_do_some_stuff()
         {
-            using var cnn = new JdbcConnection(new org.sqlite.JDBC().connect("jdbc:sqlite:sample.db", new java.util.Properties()));
+            var t = ((java.lang.Class)typeof(org.sqlite.JDBC));
+            using var cnn = new JdbcConnection("Url=jdbc:sqlite:sample.db");
+            cnn.Open();
             using var cmd = cnn.CreateCommand();
             cmd.CommandText = "drop table if exists person";
             cmd.ExecuteNonQuery();

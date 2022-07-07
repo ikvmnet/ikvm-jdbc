@@ -30,8 +30,8 @@ namespace IKVM.Jdbc.Data
         /// </summary>
         public string User
         {
-            get => this["User"] as string;
-            set => this["User"] = value;
+            get => this["user"] as string;
+            set => this["user"] = value;
         }
 
         /// <summary>
@@ -39,8 +39,8 @@ namespace IKVM.Jdbc.Data
         /// </summary>
         public string Password
         {
-            get => this["Password"] as string;
-            set => this["Password"] = value;
+            get => this["password"] as string;
+            set => this["password"] = value;
         }
 
         /// <summary>
@@ -48,8 +48,8 @@ namespace IKVM.Jdbc.Data
         /// </summary>
         public string Url
         {
-            get => this["Url"] as string;
-            set => this["Url"] = value;
+            get => this["url"] as string;
+            set => this["url"] = value;
         }
 
     }
