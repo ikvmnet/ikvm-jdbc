@@ -57,7 +57,7 @@ namespace IKVM.Jdbc.Data
         /// Initializes a new instance.
         /// </summary>
         /// <param name="connection"></param>
-        public JdbcConnection(java.sql.Connection connection)
+        public JdbcConnection(Connection connection)
         {
             this.connectionStringBuilder = new JdbcConnectionStringBuilder() { Url = connection.getMetaData().getURL() };
             this.connection = connection;

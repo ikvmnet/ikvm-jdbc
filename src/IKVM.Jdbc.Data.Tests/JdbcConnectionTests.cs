@@ -16,8 +16,8 @@ namespace IKVM.Jdbc.Data.Tests
         [TestMethod]
         public void Can_do_some_stuff()
         {
-            var t = ((java.lang.Class)typeof(org.sqlite.JDBC));
-            using var cnn = new JdbcConnection("Url=jdbc:sqlite:sample.db");
+            var c = org.sqlite.JDBC.createConnection("jdbc:sqlite:sample.db", new java.util.Properties());
+            using var cnn = new JdbcConnection(c);
             cnn.Open();
             using var cmd = cnn.CreateCommand();
             cmd.CommandText = "drop table if exists person";
