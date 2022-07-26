@@ -23,6 +23,8 @@ namespace IKVM.Jdbc.Data
         /// <summary>
         /// Sets the value of the parameter at the specified index to the given type and value.
         /// </summary>
+        /// <param name="statement"></param>
+        /// <param name="index"></param>
         /// <param name="type"></param>
         /// <param name="value"></param>
         public static void SetParameterValue(this PreparedStatement statement, int index, DbType type, object value)

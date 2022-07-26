@@ -49,5 +49,7 @@ namespace IKVM.Jdbc.Data
             DbType.DateTimeOffset => JDBCType.TIMESTAMP_WITH_TIMEZONE,
             _ => throw new NotSupportedException(),
         };
+
     }
+
 }
