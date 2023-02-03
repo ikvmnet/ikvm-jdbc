@@ -16,6 +16,7 @@ namespace IKVM.Jdbc.Data
 
         internal JdbcConnectionStringBuilder connectionStringBuilder;
         internal java.sql.Connection connection;
+        private readonly bool leaveOpen;
         internal JdbcTransaction transaction;
 
         /// <summary>
@@ -54,13 +55,15 @@ namespace IKVM.Jdbc.Data
         }
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Initializes a new instance wrapping an existing JDBC connection.
         /// </summary>
         /// <param name="connection"></param>
-        public JdbcConnection(Connection connection)
+        /// <param name="leaveOpen"></param>
+        public JdbcConnection(Connection connection, bool leaveOpen = false)
         {
             this.connectionStringBuilder = new JdbcConnectionStringBuilder() { Url = connection.getMetaData().getURL() };
             this.connection = connection;
+            this.leaveOpen = leaveOpen;
         }
 
         /// <summary>
@@ -137,7 +140,8 @@ namespace IKVM.Jdbc.Data
 
             try
             {
-                connection.close();
+                if (leaveOpen == false)
+                    connection.close();
             }
             catch (SQLException e)
             {

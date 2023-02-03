@@ -2,8 +2,6 @@
 
 using FluentAssertions;
 
-using java.sql;
-
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IKVM.Jdbc.Data.Tests
@@ -14,10 +12,9 @@ namespace IKVM.Jdbc.Data.Tests
     {
 
         [TestMethod]
-        public void Can_do_some_stuff()
+        public void CanConnectToSqlLite()
         {
-            var c = org.sqlite.JDBC.createConnection("jdbc:sqlite:sample.db", new java.util.Properties());
-            using var cnn = new JdbcConnection(c);
+            using var cnn = new JdbcConnection(org.sqlite.JDBC.createConnection("jdbc:sqlite:sample.db", new java.util.Properties()));
             cnn.Open();
             using var cmd = cnn.CreateCommand();
             cmd.CommandText = "drop table if exists person";
