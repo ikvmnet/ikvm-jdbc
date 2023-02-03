@@ -6,13 +6,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="IKVM.Core.MSBuild" Version="0.1.27">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-    </ItemGroup>
-
-    <ItemGroup>
         <TestTarget Include="IKVM.Jdbc.Data.Tests|net461" ProjectName="IKVM.Jdbc.Data.Tests" TargetFramework="net461" />
         <TestTarget Include="IKVM.Jdbc.Data.Tests|net48" ProjectName="IKVM.Jdbc.Data.Tests" TargetFramework="net48" />
         <TestTarget Include="IKVM.Jdbc.Data.Tests|netcoreapp3.1" ProjectName="IKVM.Jdbc.Data.Tests" TargetFramework="netcoreapp3.1" />
