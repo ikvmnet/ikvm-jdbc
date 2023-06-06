@@ -4,13 +4,9 @@ on:
   push:
     branches:
     - main
-    - hotfix/*
-    - develop
-    - release/*
   pull_request:
     branches:
     - main
-    - develop
 
 jobs:
   build:
@@ -110,6 +106,7 @@ jobs:
         sys:
         - windows
         - linux
+        - macos
         tfm:
         - net48
         - netcoreapp3.1
@@ -121,38 +118,8 @@ jobs:
     name: Test (${{ matrix.sys }}:${{ matrix.tfm }})
     needs:
     - build
-    runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"]}')[matrix.sys] }}
+    runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"]},"macos":["macos-latest"]}')[matrix.sys] }}
     steps:
-    - name: Set Paths (Windows)
-      if: runner.os == 'Windows'
-      shell: pwsh
-      run: |
-        $dir="C:\run"
-        mkdir $dir
-        mkdir $dir\temp
-        mkdir $dir\dotnet
-        mkdir $dir\nuget
-        mkdir $dir\nuget\packages
-        mkdir $dir\job
-        Add-Content $env:GITHUB_ENV "`nJOBPATH=$dir\job"
-        Add-Content $env:GITHUB_ENV "`nTMP=$dir\temp`nTEMP=$dir\temp`nTMPDIR=$dir\temp"
-        Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=$dir\dotnet"
-        Add-Content $env:GITHUB_ENV "`nNUGET_PACKAGES=$dir\nuget\packages"
-    - name: Set Paths (Linux)
-      if: runner.os == 'Linux'
-      shell: pwsh
-      run: |
-        $dir="${{ runner.temp }}/run"
-        mkdir $dir
-        mkdir $dir/temp
-        mkdir $dir/dotnet
-        mkdir $dir/nuget
-        mkdir $dir/nuget/packages
-        mkdir $dir/job
-        Add-Content $env:GITHUB_ENV "`nJOBPATH=$dir/job"
-        Add-Content $env:GITHUB_ENV "`nTMP=$dir/temp`nTEMP=$dir/temp`nTMPDIR=$dir/temp"
-        Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=$dir/dotnet"
-        Add-Content $env:GITHUB_ENV "`nNUGET_PACKAGES=$dir/nuget/packages"
     - name: Setup .NET 3.1
       uses: actions/setup-dotnet@v3
       with:
@@ -175,34 +142,54 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: tests
-        path: ${{ env.JOBPATH }}
     - name: Restore Tests
       run: tar xzvf tests.tar.gz
-      working-directory: ${{ env.JOBPATH }}
     - name: Execute Tests
       timeout-minutes: 480
       shell: pwsh
       run: |
+        # assign powershell variables
+        $run = "${{ matrix.run }}"
         $tfm = "${{ matrix.tfm }}"
         $sys = "${{ matrix.sys }}"
-        $tests = $(gci ./tests/*/$tfm -Recurse -Filter '*.Tests.dll')
-        if ($tests) {
-            Add-Content $env:GITHUB_ENV "`nRET=TestResults--$tfm--$sys"
-            dotnet test -f $tfm --blame -v 2 --results-directory "TestResults" --logger:"console;verbosity=detailed" --logger:trx --collect "Code Coverage" $tests
+
+        # suite name can contain filter expression after ?
+        $split = $run.IndexOf("?")
+        if ($split -gt -1) {
+            $tst = $run.Substring(0, $split)
+            $qry = $run.Substring($split + 1)
+        } else {
+            $tst = $run
         }
-      working-directory: ${{ env.JOBPATH }}
+
+        # scan for test assemblies
+        $tests = $(gci .\tests\$tst\$tfm -Recurse -Filter '*.Tests.dll')
+
+        # if a query was specified, add to test command
+        if ($tests) {
+            if ($qry -ne "" -and $qry -ne $null) {
+                Add-Content $env:GITHUB_ENV "`nRET=TestResults--$tst-$qry--$tfm--$sys"
+                dotnet test -f $tfm --blame -v 2 --results-directory "TestResults" --logger:"console;verbosity=detailed" --logger:trx --collect "Code Coverage" --filter "$qry" $tests
+            } else {
+                Add-Content $env:GITHUB_ENV "`nRET=TestResults--$tst--$tfm--$sys"
+                dotnet test -f $tfm --blame -v 2 --results-directory "TestResults" --logger:"console;verbosity=detailed" --logger:trx --collect "Code Coverage" $tests
+            }
+        }
+    - name: Archive Test Results
+      if: always() && startsWith(env.RET, 'TestResults--')
+      run: tar czvf TestResults.tar.gz TestResults
+      working-directory: ${{ env.IKVMPATH }}
     - name: Upload Test Results
       if: always() && startsWith(env.RET, 'TestResults--')
       uses: actions/upload-artifact@v3
       with:
         name: ${{ env.RET }}
-        path: ${{ env.JOBPATH }}/TestResults
+        path: TestResults.tar.gz
   release:
     name: Release
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     needs:
     - test
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout Source
       uses: actions/checkout@v3
@@ -225,33 +212,27 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: nuget
-        path: dist/nuget
+        path: dist
+    - name: Restore NuGet Packages
+      run: tar xzvf nuget.tar.gz
+      working-directory: dist
     - name: Create Release
-      if: github.ref == 'refs/heads/main' || github.event.head_commit.message == '+push'
-      uses: ncipollo/release-action@v1.11.2
+      if: github.ref_type == 'tag'
+      uses: ncipollo/release-action@v1
       with:
-        tag: ${{ steps.GitVersion.outputs.semVer }}
+        tag: ${{ github.ref_name }}
+        allowUpdates: true
         artifacts: dist/nuget/*.nupkg,dist/nuget/*.snupkg
         draft: false
-        generateReleaseNotes: true
-        prerelease: ${{ github.ref == 'refs/heads/develop' }}
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Push NuGet (GitHub)
       shell: pwsh
-      run: dotnet nuget push dist/nuget/*.nupkg --source $env:GITHUB_REPOS --api-key $env:GITHUB_TOKEN --skip-duplicate
+      run: dotnet nuget push dist/nuget/*.nupkg --source $env:GITHUB_REPOS --api-key $env:GITHUB_TOKEN --skip-duplicate --no-symbols
       env:
         GITHUB_REPOS: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - name: Push NuGet (Azure DevOps)
-      shell: pwsh
-      run: |
-        dotnet nuget add source $env:AZUREDEVOPS_REPOS --name az --username az --password $env:AZUREDEVOPS_TOKEN --store-password-in-clear-text
-        dotnet nuget push dist/nuget/*.nupkg --source az --api-key az --skip-duplicate
-      env:
-        AZUREDEVOPS_REPOS: https://pkgs.dev.azure.com/ikvm-revived/ikvm/_packaging/ikvm-ci/nuget/v3/index.json
-        AZUREDEVOPS_TOKEN: ${{ secrets.AZUREDEVOPS_PAT }}
     - name: Push NuGet
-      if: github.ref == 'refs/heads/main' || github.event.head_commit.message == '+push'
+      if: github.ref_type == 'tag'
       shell: pwsh
       run: dotnet nuget push dist/nuget/*.nupkg --source $env:NUGET_REPOS --api-key $env:NUGET_TOKEN --skip-duplicate
       env:
