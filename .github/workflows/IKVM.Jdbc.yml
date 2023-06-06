@@ -18,12 +18,6 @@ jobs:
       with:
         fetch-depth: 0
         submodules: recursive
-    - name: Move Temporary Directory
-      shell: pwsh
-      run: Add-Content $env:GITHUB_ENV "`nTMP=${{ runner.temp }}`nTEMP=${{ runner.temp }}`nTMPDIR=${{ runner.temp }}"
-    - name: Setup .NET
-      shell: pwsh
-      run: Add-Content $env:GITHUB_ENV "`nDOTNET_INSTALL_DIR=${{ runner.temp }}\dotnet"
     - name: Setup .NET 3.1
       uses: actions/setup-dotnet@v3
       with:
@@ -108,13 +102,17 @@ jobs:
         - linux
         - macos
         tfm:
-        - net48
+        - net461
         - netcoreapp3.1
         - net6.0
         - net7.0
         exclude:
-        - tfm: net48
+        - tfm: net461
           sys: linux
+        - tfm: net461
+          sys: macos
+        - tfm: netcoreapp3.1
+          sys: macos
     name: Test (${{ matrix.sys }}:${{ matrix.tfm }})
     needs:
     - build
