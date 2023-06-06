@@ -97,6 +97,8 @@ jobs:
   test:
     strategy:
       matrix:
+        run:
+        - IKVM.Jdbc.Data.Tests
         sys:
         - windows
         - linux
@@ -113,7 +115,7 @@ jobs:
           sys: macos
         - tfm: netcoreapp3.1
           sys: macos
-    name: Test (${{ matrix.sys }}:${{ matrix.tfm }})
+    name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }})
     needs:
     - build
     runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"],"macos":["macos-latest"]}')[matrix.sys] }}
