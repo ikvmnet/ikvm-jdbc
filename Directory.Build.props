@@ -8,7 +8,7 @@
     </ItemGroup>
 
     <PropertyGroup Label="Copyright Info">
-        <ProductName>IKVM.Jdnc</ProductName>
+        <ProductName>IKVM.Jdbc</ProductName>
         <Authors>@(Authors, ',')</Authors>
         <CurrentYear Condition=" '$(CurrentYear)' == '' ">$([System.DateTime]::UtcNow.Year.ToString())</CurrentYear>
         <Copyright>Copyright © $(CurrentYear) @(Authors, ', ')</Copyright>
@@ -23,9 +23,9 @@
     </PropertyGroup>
 
     <PropertyGroup Label="Package Info">
-        <RepositoryUrl Condition=" '$(RepositoryUrl)' == '' ">https://github.com/ikvm-revived/ikvm-jdbc.git</RepositoryUrl>
+        <RepositoryUrl Condition=" '$(RepositoryUrl)' == '' ">https://github.com/ikvmnet/ikvm-jdbc.git</RepositoryUrl>
         <RepositoryType Condition=" '$(RepositoryType)' == '' ">git</RepositoryType>
-        <PackageProjectUrl  Condition=" '$(PackageProjectUrl)' == '' ">https://github.com/ikvm-revived/ikvm-jdbc</PackageProjectUrl>
+        <PackageProjectUrl  Condition=" '$(PackageProjectUrl)' == '' ">https://github.com/ikvmnet/ikvm-jdbc</PackageProjectUrl>
         <PackageVersion Condition=" '$(PackageVersion)' == '' ">$(Version)</PackageVersion>
     </PropertyGroup>
 
