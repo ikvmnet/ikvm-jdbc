@@ -116,7 +116,7 @@ jobs:
     name: Test (${{ matrix.sys }}:${{ matrix.tfm }})
     needs:
     - build
-    runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"]},"macos":["macos-latest"]}')[matrix.sys] }}
+    runs-on: ${{ fromJSON('{"windows":["windows-2022"],"linux":["ubuntu-22.04"],"macos":["macos-latest"]}')[matrix.sys] }}
     steps:
     - name: Setup .NET 3.1
       uses: actions/setup-dotnet@v3
