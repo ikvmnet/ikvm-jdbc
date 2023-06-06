@@ -221,6 +221,7 @@ jobs:
         allowUpdates: true
         artifacts: dist/nuget/*.nupkg,dist/nuget/*.snupkg
         draft: false
+        makeLatest: true
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Push NuGet (GitHub)
       shell: pwsh
