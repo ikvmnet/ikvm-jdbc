@@ -115,6 +115,7 @@ jobs:
           sys: macos
         - tfm: netcoreapp3.1
           sys: macos
+        - sys: macos
     name: Test (${{ matrix.run }}:${{ matrix.tfm }}:${{ matrix.sys }})
     needs:
     - build
