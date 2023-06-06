@@ -211,9 +211,6 @@ jobs:
       with:
         name: nuget
         path: dist
-    - name: Restore NuGet Packages
-      run: tar xzvf nuget.tar.gz
-      working-directory: dist
     - name: Create Release
       if: github.ref_type == 'tag'
       uses: ncipollo/release-action@v1
