@@ -7,7 +7,6 @@
 
     <ItemGroup>
         <TestTarget Include="IKVM.Jdbc.Data.Tests|net461" ProjectName="IKVM.Jdbc.Data.Tests" TargetFramework="net461" />
-        <TestTarget Include="IKVM.Jdbc.Data.Tests|net48" ProjectName="IKVM.Jdbc.Data.Tests" TargetFramework="net48" />
         <TestTarget Include="IKVM.Jdbc.Data.Tests|netcoreapp3.1" ProjectName="IKVM.Jdbc.Data.Tests" TargetFramework="netcoreapp3.1" />
         <TestTarget Include="IKVM.Jdbc.Data.Tests|net6.0" ProjectName="IKVM.Jdbc.Data.Tests" TargetFramework="net6.0" />
         <TestTarget Include="IKVM.Jdbc.Data.Tests|net7.0" ProjectName="IKVM.Jdbc.Data.Tests" TargetFramework="net7.0" />
