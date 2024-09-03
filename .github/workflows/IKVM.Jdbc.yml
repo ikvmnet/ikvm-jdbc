@@ -140,7 +140,7 @@ jobs:
         GITHUB_REPOS: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Download Tests
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4.1.7
       with:
         name: tests
     - name: Restore Tests
@@ -210,7 +210,7 @@ jobs:
       with:
         useConfigFile: true
     - name: Download NuGet Packages
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4.1.7
       with:
         name: nuget
         path: dist/nuget
