@@ -264,236 +264,181 @@ namespace IKVM.Jdbc.Data
 
             // java starts at 1
             ordinal++;
-            var type = rs.getMetaData().getColumnType(ordinal);
+            var type = (JDBCType.__Enum)rs.getMetaData().getColumnType(ordinal);
 
-            if (type == JDBCType.ARRAY.ordinal())
+            switch (type)
             {
-                var v = rs.getArray(ordinal);
-                return rs.wasNull() ? DBNull.Value : v.getArray();
+                case JDBCType.__Enum.ARRAY:
+                    {
+                        var v = rs.getArray(ordinal);
+                        return rs.wasNull() ? DBNull.Value : v.getArray();
+                    }
+                case JDBCType.__Enum.BIGINT:
+                    {
+                        var v = rs.getLong(ordinal);
+                        return rs.wasNull() ? DBNull.Value : v;
+                    }
+                case JDBCType.__Enum.BINARY:
+                    {
+                        var v = rs.getBytes(ordinal);
+                        return rs.wasNull() ? DBNull.Value : v;
+                    }
+                case JDBCType.__Enum.BIT:
+                    {
+                        var v = rs.getBoolean(ordinal);
+                        return rs.wasNull() ? DBNull.Value : v;
+                    }
+                case JDBCType.__Enum.BLOB:
+                    {
+                        var v = rs.getBlob(ordinal);
+                        return rs.wasNull() ? DBNull.Value : v;
+                    }
+                case JDBCType.__Enum.BOOLEAN:
+                    {
+                        var v = rs.getBoolean(ordinal);
+                        return rs.wasNull() ? DBNull.Value : v;
+                    }
+                case JDBCType.__Enum.CHAR:
+                    {
+                        var v = rs.getString(ordinal);
+                        return rs.wasNull() ? DBNull.Value : v;
+                    }
+                case JDBCType.__Enum.CLOB:
+                    {
+                        var v = rs.getClob(ordinal);
+                        return rs.wasNull() ? DBNull.Value : v;
+                    }
+                case JDBCType.__Enum.DATALINK:
+                    throw new NotSupportedException();
+                case JDBCType.__Enum.DATE:
+                    {
+                        var v = rs.getDate(ordinal);
+                        return rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(v.getTime()).UtcDateTime;
+                    }
+                case JDBCType.__Enum.DECIMAL:
+                    {
+                        var v = rs.getBigDecimal(ordinal);
+                        return rs.wasNull() ? DBNull.Value : decimal.Parse(v.toString());
+                    }
+                case JDBCType.__Enum.DISTINCT:
+                    throw new NotImplementedException();
+                case JDBCType.__Enum.DOUBLE:
+                    {
+                        var v = rs.getDouble(ordinal);
+                        return rs.wasNull() ? DBNull.Value : v;
+                    }
+                case JDBCType.__Enum.FLOAT:
+                    {
+                        var v = rs.getFloat(ordinal);
+                        return rs.wasNull() ? DBNull.Value : v;
+                    }
+                case JDBCType.__Enum.INTEGER:
+                    {
+                        var v = rs.getInt(ordinal);
+                        return rs.wasNull() ? DBNull.Value : v;
+                    }
+                case JDBCType.__Enum.JAVA_OBJECT:
+                    {
+                        var v = rs.getObject(ordinal);
+                        return rs.wasNull() ? DBNull.Value : v;
+                    }
+                case JDBCType.__Enum.LONGNVARCHAR:
+                    {
+                        var v = rs.getNString(ordinal);
+                        return rs.wasNull() ? DBNull.Value : v;
+                    }
+                case JDBCType.__Enum.LONGVARBINARY:
+                    {
+                        var v = rs.getBytes(ordinal);
+                        return rs.wasNull() ? DBNull.Value : v;
+                    }
+                case JDBCType.__Enum.LONGVARCHAR:
+                    {
+                        var v = rs.getString(ordinal);
+                        return rs.wasNull() ? DBNull.Value : v;
+                    }
+                case JDBCType.__Enum.NCHAR:
+                    {
+                        var v = rs.getNString(ordinal);
+                        return rs.wasNull() ? DBNull.Value : v;
+                    }
+                case JDBCType.__Enum.NCLOB:
+                    {
+                        var v = rs.getNClob(ordinal);
+                        return rs.wasNull() ? DBNull.Value : v;
+                    }
+                case JDBCType.__Enum.NULL:
+                    return DBNull.Value;
+                case JDBCType.__Enum.NUMERIC:
+                    throw new NotImplementedException();
+                case JDBCType.__Enum.NVARCHAR:
+                    {
+                        var v = rs.getNString(ordinal);
+                        return rs.wasNull() ? DBNull.Value : v;
+                    }
+                case JDBCType.__Enum.OTHER:
+                    throw new NotSupportedException();
+                case JDBCType.__Enum.REAL:
+                    {
+                        var v = rs.getFloat(ordinal);
+                        return rs.wasNull() ? DBNull.Value : v;
+                    }
+                case JDBCType.__Enum.REF:
+                    throw new NotSupportedException();
+                case JDBCType.__Enum.REF_CURSOR:
+                    throw new NotSupportedException();
+                case JDBCType.__Enum.ROWID:
+                    throw new NotImplementedException();
+                case JDBCType.__Enum.SMALLINT:
+                    {
+                        var v = rs.getShort(ordinal);
+                        return rs.wasNull() ? DBNull.Value : v;
+                    }
+                case JDBCType.__Enum.SQLXML:
+                    {
+                        var v = rs.getSQLXML(ordinal);
+                        return rs.wasNull() ? DBNull.Value : v;
+                    }
+                case JDBCType.__Enum.STRUCT:
+                    throw new NotSupportedException();
+                case JDBCType.__Enum.TIME:
+                    {
+                        var v = rs.getTime(ordinal);
+                        return rs.wasNull() ? DBNull.Value : TimeSpan.FromMilliseconds(v.getTime());
+                    }
+                case JDBCType.__Enum.TIMESTAMP:
+                    {
+                        var v = rs.getTime(ordinal);
+                        return rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(v.getTime()).UtcDateTime;
+                    }
+                case JDBCType.__Enum.TIMESTAMP_WITH_TIMEZONE:
+                    {
+                        var v = rs.getTime(ordinal);
+                        return rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(v.getTime());
+                    }
+                case JDBCType.__Enum.TIME_WITH_TIMEZONE:
+                    {
+                        var v = rs.getTime(ordinal);
+                        return rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(v.getTime());
+                    }
+                case JDBCType.__Enum.TINYINT:
+                    {
+                        var v = rs.getByte(ordinal);
+                        return rs.wasNull() ? DBNull.Value : v;
+                    }
+                case JDBCType.__Enum.VARBINARY:
+                    {
+                        var v = rs.getBytes(ordinal);
+                        return rs.wasNull() ? DBNull.Value : v;
+                    }
+                case JDBCType.__Enum.VARCHAR:
+                    {
+                        var v = rs.getString(ordinal);
+                        return rs.wasNull() ? DBNull.Value : v;
+                    }
+                default:
+                    throw new NotSupportedException();
             }
-
-            if (type == JDBCType.BIGINT.ordinal())
-            {
-                var v = rs.getLong(ordinal);
-                return rs.wasNull() ? DBNull.Value : v;
-            }
-
-            if (type == JDBCType.BINARY.ordinal())
-            {
-                var v = rs.getBytes(ordinal);
-                return rs.wasNull() ? DBNull.Value : v;
-            }
-
-            if (type == JDBCType.BIT.ordinal())
-            {
-                var v = rs.getBoolean(ordinal);
-                return rs.wasNull() ? DBNull.Value : v;
-            }
-
-            if (type == JDBCType.BLOB.ordinal())
-            {
-                var v = rs.getBlob(ordinal);
-                return rs.wasNull() ? DBNull.Value : v;
-            }
-
-            if (type == JDBCType.BOOLEAN.ordinal())
-            {
-                var v = rs.getBoolean(ordinal);
-                return rs.wasNull() ? DBNull.Value : v;
-            }
-
-            if (type == JDBCType.CHAR.ordinal())
-            {
-                var v = rs.getString(ordinal);
-                return rs.wasNull() ? DBNull.Value : v;
-            }
-
-            if (type == JDBCType.CLOB.ordinal())
-            {
-                var v = rs.getClob(ordinal);
-                return rs.wasNull() ? DBNull.Value : v;
-            }
-
-            if (type == JDBCType.DATALINK.ordinal())
-            {
-                throw new NotSupportedException();
-            }
-
-            if (type == JDBCType.DATE.ordinal())
-            {
-                var v = rs.getDate(ordinal);
-                return rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(v.getTime()).UtcDateTime;
-            }
-
-            if (type == JDBCType.DECIMAL.ordinal())
-            {
-                var v = rs.getBigDecimal(ordinal);
-                return rs.wasNull() ? DBNull.Value : decimal.Parse(v.toString());
-            }
-
-            if (type == JDBCType.DISTINCT.ordinal())
-            {
-                throw new NotImplementedException();
-            }
-
-            if (type == JDBCType.DOUBLE.ordinal())
-            {
-                var v = rs.getDouble(ordinal);
-                return rs.wasNull() ? DBNull.Value : v;
-            }
-
-            if (type == JDBCType.FLOAT.ordinal())
-            {
-                var v = rs.getFloat(ordinal);
-                return rs.wasNull() ? DBNull.Value : v;
-            }
-
-            if (type == JDBCType.INTEGER.ordinal())
-            {
-                var v = rs.getInt(ordinal);
-                return rs.wasNull() ? DBNull.Value : v;
-            }
-
-            if (type == JDBCType.JAVA_OBJECT.ordinal())
-            {
-                var v = rs.getObject(ordinal);
-                return rs.wasNull() ? DBNull.Value : v;
-            }
-
-            if (type == JDBCType.LONGNVARCHAR.ordinal())
-            {
-                var v = rs.getNString(ordinal);
-                return rs.wasNull() ? DBNull.Value : v;
-            }
-
-            if (type == JDBCType.LONGVARBINARY.ordinal())
-            {
-                var v = rs.getBytes(ordinal);
-                return rs.wasNull() ? DBNull.Value : v;
-            }
-
-            if (type == JDBCType.LONGVARCHAR.ordinal())
-            {
-                var v = rs.getString(ordinal);
-                return rs.wasNull() ? DBNull.Value : v;
-            }
-
-            if (type == JDBCType.NCHAR.ordinal())
-            {
-                var v = rs.getNString(ordinal);
-                return rs.wasNull() ? DBNull.Value : v;
-            }
-
-            if (type == JDBCType.NCLOB.ordinal())
-            {
-                var v = rs.getNClob(ordinal);
-                return rs.wasNull() ? DBNull.Value : v;
-            }
-
-            if (type == JDBCType.NULL.ordinal())
-            {
-                return DBNull.Value;
-            }
-
-            if (type == JDBCType.NUMERIC.ordinal())
-            {
-                throw new NotImplementedException();
-                //var v = rs.getBigDecimal(ordinal);
-                //return rs.wasNull() ? DBNull.Value : v;
-            }
-
-            if (type == JDBCType.NVARCHAR.ordinal())
-            {
-                var v = rs.getNString(ordinal);
-                return rs.wasNull() ? DBNull.Value : v;
-            }
-
-            if (type == JDBCType.OTHER.ordinal())
-            {
-                throw new NotSupportedException();
-            }
-
-            if (type == JDBCType.REAL.ordinal())
-            {
-                var v = rs.getFloat(ordinal);
-                return rs.wasNull() ? DBNull.Value : v;
-            }
-
-            if (type == JDBCType.REF.ordinal())
-            {
-                throw new NotSupportedException();
-            }
-
-            if (type == JDBCType.REF_CURSOR.ordinal())
-            {
-                throw new NotSupportedException();
-            }
-
-            if (type == JDBCType.ROWID.ordinal())
-            {
-                throw new NotImplementedException();
-            }
-
-            if (type == JDBCType.SMALLINT.ordinal())
-            {
-                var v = rs.getShort(ordinal);
-                return rs.wasNull() ? DBNull.Value : v;
-            }
-
-            if (type == JDBCType.SQLXML.ordinal())
-            {
-                var v = rs.getSQLXML(ordinal);
-                return rs.wasNull() ? DBNull.Value : v;
-            }
-
-            if (type == JDBCType.STRUCT.ordinal())
-            {
-                throw new NotSupportedException();
-            }
-
-            if (type == JDBCType.TIME.ordinal())
-            {
-                var v = rs.getTime(ordinal);
-                return rs.wasNull() ? DBNull.Value : TimeSpan.FromMilliseconds(v.getTime());
-            }
-
-            if (type == JDBCType.TIMESTAMP.ordinal())
-            {
-                var v = rs.getTime(ordinal);
-                return rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(v.getTime()).UtcDateTime;
-            }
-
-            if (type == JDBCType.TIMESTAMP_WITH_TIMEZONE.ordinal())
-            {
-                var v = rs.getTime(ordinal);
-                return rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(v.getTime());
-            }
-
-            if (type == JDBCType.TIME_WITH_TIMEZONE.ordinal())
-            {
-                var v = rs.getTime(ordinal);
-                return rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(v.getTime());
-            }
-
-            if (type == JDBCType.TINYINT.ordinal())
-            {
-                var v = rs.getByte(ordinal);
-                return rs.wasNull() ? DBNull.Value : v;
-            }
-
-            if (type == JDBCType.VARBINARY.ordinal())
-            {
-                var v = rs.getBytes(ordinal);
-                return rs.wasNull() ? DBNull.Value : v;
-            }
-
-            if (type == JDBCType.VARCHAR.ordinal())
-            {
-                var v = rs.getString(ordinal);
-                return rs.wasNull() ? DBNull.Value : v;
-            }
-
-            throw new NotSupportedException();
         }
 
         /// <summary>
