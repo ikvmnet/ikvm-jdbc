@@ -239,7 +239,7 @@ namespace IKVM.Jdbc.Data
                     if (parameters.Count > 0)
                         Prepare();
 
-                    // if we're doing an implicit return value for a stored procedure, it is always index 0, adn everything is offset
+                    // if we're doing an implicit return value for a stored procedure, it is always index 0, and everything is offset
                     var offset = CommandType == CommandType.StoredProcedure ? 1 : 0;
 
                     if (prepared is not null)

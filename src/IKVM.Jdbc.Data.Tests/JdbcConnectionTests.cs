@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 
 using FluentAssertions;
 
@@ -11,25 +12,91 @@ namespace IKVM.Jdbc.Data.Tests
     public class JdbcConnectionTests
     {
 
-        [TestMethod]
-        public void CanConnectToSqlLite()
+        JdbcConnection CreateTestConnection()
         {
-            using var cnn = new JdbcConnection(org.sqlite.JDBC.createConnection("jdbc:sqlite:sample.db", new java.util.Properties()));
+            return new JdbcConnection(org.sqlite.JDBC.createConnection("jdbc:sqlite:sample.db", new java.util.Properties()));
+        }
+
+        [TestMethod]
+        public void CanConnect()
+        {
+            using var cnn = CreateTestConnection();
+            cnn.Open();
+            cnn.State.Should().Be(System.Data.ConnectionState.Open);
+        }
+
+        [TestMethod]
+        public async Task CanConnectAsync()
+        {
+            using var cnn = CreateTestConnection();
+            await cnn.OpenAsync();
+            cnn.State.Should().Be(System.Data.ConnectionState.Open);
+        }
+
+        [TestMethod]
+        public void CanExecuteNonQuery()
+        {
+            using var cnn = CreateTestConnection();
             cnn.Open();
             using var cmd = cnn.CreateCommand();
-            cmd.CommandText = "drop table if exists person";
+            cmd.CommandText = "SELECT 0 WHERE 0";
+            cmd.ExecuteNonQuery().Should().Be(-1);
+        }
+
+        [TestMethod]
+        public async Task CanExecuteNonQueryAsync()
+        {
+            using var cnn = CreateTestConnection();
+            await cnn.OpenAsync();
+            using var cmd = cnn.CreateCommand();
+            cmd.CommandText = "SELECT 0 WHERE 0";
+            (await cmd.ExecuteNonQueryAsync()).Should().Be(-1);
+        }
+
+        [TestMethod]
+        public void CanExecuteReader()
+        {
+            using var cnn = CreateTestConnection();
+            cnn.Open();
+            using var cmd = cnn.CreateCommand();
+            cmd.CommandText = "drop table if exists CanExecuteReader";
             cmd.ExecuteNonQuery();
-            cmd.CommandText = "create table person (id integer, name string)";
+            cmd.CommandText = "create table CanExecuteReader (id integer, name string)";
             cmd.ExecuteNonQuery();
-            cmd.CommandText = "insert into person values(1, 'leo')";
+            cmd.CommandText = "insert into CanExecuteReader values(1, 'leo')";
             cmd.ExecuteNonQuery();
-            cmd.CommandText = "insert into person values(2, 'yui')";
+            cmd.CommandText = "insert into CanExecuteReader values(2, 'yui')";
             cmd.ExecuteNonQuery();
-            cmd.CommandText = "select * from person";
+            cmd.CommandText = "select * from CanExecuteReader";
             using var rdr = cmd.ExecuteReader();
             var list = new List<(long, string)>();
             while (rdr.Read())
                 list.Add((rdr.GetFieldValue<long>(rdr.GetOrdinal("id")), rdr.GetString(1)));
+
+            list.Should().HaveCount(2);
+            list.Should().Contain(x => x.Item1 == 1 && x.Item2 == "leo");
+            list.Should().Contain(x => x.Item1 == 2 && x.Item2 == "yui");
+        }
+
+        [TestMethod]
+        public async Task CanExecuteReaderAsync()
+        {
+            using var cnn = CreateTestConnection();
+            await cnn.OpenAsync();
+            using var cmd = cnn.CreateCommand();
+            cmd.CommandText = "drop table if exists CanExecuteReaderAsync";
+            await cmd.ExecuteNonQueryAsync();
+            cmd.CommandText = "create table CanExecuteReaderAsync (id integer, name string)";
+            await cmd.ExecuteNonQueryAsync();
+            cmd.CommandText = "insert into CanExecuteReaderAsync values(1, 'leo')";
+            await cmd.ExecuteNonQueryAsync();
+            cmd.CommandText = "insert into CanExecuteReaderAsync values(2, 'yui')";
+            await cmd.ExecuteNonQueryAsync();
+            cmd.CommandText = "select * from CanExecuteReaderAsync";
+            using var rdr = await cmd.ExecuteReaderAsync();
+            var list = new List<(long, string)>();
+            while (await rdr.ReadAsync())
+                list.Add((await rdr.GetFieldValueAsync<long>(rdr.GetOrdinal("id")), rdr.GetString(1)));
 
             list.Should().HaveCount(2);
             list.Should().Contain(x => x.Item1 == 1 && x.Item2 == "leo");
