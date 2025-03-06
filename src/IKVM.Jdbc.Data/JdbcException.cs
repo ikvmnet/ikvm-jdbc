@@ -47,8 +47,6 @@ namespace IKVM.Jdbc.Data
             this(jdbcException.getMessage(), jdbcException)
         {
 
-
-
         }
 
     }

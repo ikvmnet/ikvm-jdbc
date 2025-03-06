@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 using FluentAssertions;
@@ -67,15 +68,18 @@ namespace IKVM.Jdbc.Data.Tests
             cmd.ExecuteNonQuery();
             cmd.CommandText = "insert into CanExecuteReader values(2, 'yui')";
             cmd.ExecuteNonQuery();
+            cmd.CommandText = "insert into CanExecuteReader values(3, NULL)";
+            cmd.ExecuteNonQuery();
             cmd.CommandText = "select * from CanExecuteReader";
             using var rdr = cmd.ExecuteReader();
-            var list = new List<(long, string)>();
+            var list = new List<(long, object)>();
             while (rdr.Read())
-                list.Add((rdr.GetFieldValue<long>(rdr.GetOrdinal("id")), rdr.GetString(1)));
+                list.Add((rdr.GetFieldValue<long>(rdr.GetOrdinal("id")), rdr.GetValue(1)));
 
-            list.Should().HaveCount(2);
-            list.Should().Contain(x => x.Item1 == 1 && x.Item2 == "leo");
-            list.Should().Contain(x => x.Item1 == 2 && x.Item2 == "yui");
+            list.Should().HaveCount(3);
+            list.Should().Contain(x => x.Item1 == 1 && (string)x.Item2 == "leo");
+            list.Should().Contain(x => x.Item1 == 2 && (string)x.Item2 == "yui");
+            list.Should().Contain(x => x.Item1 == 3 && x.Item2 == DBNull.Value);
         }
 
         [TestMethod]
@@ -92,15 +96,18 @@ namespace IKVM.Jdbc.Data.Tests
             await cmd.ExecuteNonQueryAsync();
             cmd.CommandText = "insert into CanExecuteReaderAsync values(2, 'yui')";
             await cmd.ExecuteNonQueryAsync();
+            cmd.CommandText = "insert into CanExecuteReaderAsync values(3, NULL)";
+            await cmd.ExecuteNonQueryAsync();
             cmd.CommandText = "select * from CanExecuteReaderAsync";
             using var rdr = await cmd.ExecuteReaderAsync();
-            var list = new List<(long, string)>();
+            var list = new List<(long, object)>();
             while (await rdr.ReadAsync())
-                list.Add((await rdr.GetFieldValueAsync<long>(rdr.GetOrdinal("id")), rdr.GetString(1)));
+                list.Add((await rdr.GetFieldValueAsync<long>(rdr.GetOrdinal("id")), rdr.GetValue(1)));
 
-            list.Should().HaveCount(2);
-            list.Should().Contain(x => x.Item1 == 1 && x.Item2 == "leo");
-            list.Should().Contain(x => x.Item1 == 2 && x.Item2 == "yui");
+            list.Should().HaveCount(3);
+            list.Should().Contain(x => x.Item1 == 1 && (string)x.Item2 == "leo");
+            list.Should().Contain(x => x.Item1 == 2 && (string)x.Item2 == "yui");
+            list.Should().Contain(x => x.Item1 == 3 && x.Item2 == DBNull.Value);
         }
 
     }
