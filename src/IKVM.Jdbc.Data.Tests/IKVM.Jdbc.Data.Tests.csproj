@@ -1,7 +1,7 @@
 ﻿<Project Sdk="MSTest.Sdk/3.8.2">
 
     <PropertyGroup>
-        <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
+        <TargetFrameworks>net472;net6.0;net8.0;net9.0</TargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>
