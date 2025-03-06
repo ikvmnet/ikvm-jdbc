@@ -1,12 +1,18 @@
 name: IKVM.Jdbc
 
 on:
+  workflow_dispatch:
   push:
     branches:
     - main
+    - develop
   pull_request:
     branches:
     - main
+    - develop
+  release:
+    types:
+    - created
 
 jobs:
   build:
