@@ -134,7 +134,7 @@ namespace IKVM.Jdbc.Data
                 throw new JdbcException("Connection must be open commit a transaction.");
 
             if (savepoints.TryGetValue(savepointName, out var savepoint) == false)
-                throw new JdbcException("Unknown savepoint name.");
+                throw new JdbcException("Unknown save point name.");
 
             try
             {
@@ -153,7 +153,7 @@ namespace IKVM.Jdbc.Data
                 throw new JdbcException("Connection must be open commit a transaction.");
 
             if (savepoints.TryGetValue(savepointName, out var savepoint) == false)
-                throw new JdbcException("Unknown savepoint name.");
+                throw new JdbcException("Unknown save point name.");
 
             try
             {
