@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 
@@ -14,6 +15,7 @@ namespace IKVM.Jdbc.Data
     {
 
         readonly JdbcConnection connection;
+        readonly Dictionary<string, Savepoint> savepoints = new();
 
         /// <summary>
         /// Initializes a new instance.
@@ -102,6 +104,69 @@ namespace IKVM.Jdbc.Data
                 throw new JdbcException(e);
             }
         }
+
+#if NET6_0_OR_GREATER
+        #region SavePoints
+
+        /// <inheritdoc />
+        public override bool SupportsSavepoints => connection.connection.getMetaData().supportsSavepoints();
+
+        /// <inheritdoc />
+        public override void Save(string savepointName)
+        {
+            if (connection.State != ConnectionState.Open)
+                throw new JdbcException("Connection must be open commit a transaction.");
+
+            try
+            {
+                savepoints[savepointName] = connection.connection.setSavepoint(savepointName);
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
+        }
+
+        /// <inheritdoc />
+        public override void Rollback(string savepointName)
+        {
+            if (connection.State != ConnectionState.Open)
+                throw new JdbcException("Connection must be open commit a transaction.");
+
+            if (savepoints.TryGetValue(savepointName, out var savepoint) == false)
+                throw new JdbcException("Unknown savepoint name.");
+
+            try
+            {
+                connection.connection.rollback(savepoint);
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
+        }
+
+        /// <inheritdoc />
+        public override void Release(string savepointName)
+        {
+            if (connection.State != ConnectionState.Open)
+                throw new JdbcException("Connection must be open commit a transaction.");
+
+            if (savepoints.TryGetValue(savepointName, out var savepoint) == false)
+                throw new JdbcException("Unknown savepoint name.");
+
+            try
+            {
+                connection.connection.releaseSavepoint(savepoint);
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
+        }
+
+        #endregion
+#endif
 
     }
 

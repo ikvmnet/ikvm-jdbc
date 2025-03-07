@@ -190,10 +190,7 @@ namespace IKVM.Jdbc.Data
         /// Gets the current database transaction.
         /// </summary>
         /// <returns></returns>
-        public DbTransaction GetDbTransaction()
-        {
-            return transaction;
-        }
+        public JdbcTransaction Transaction => transaction;
 
         /// <summary>
         /// Starts a new JDBC transaction by disabling auto-commit.

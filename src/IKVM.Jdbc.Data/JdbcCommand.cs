@@ -37,6 +37,15 @@ namespace IKVM.Jdbc.Data
         }
 
         /// <summary>
+        /// Gets or sets the <see cref="JdbcTransaction"/> within which this <see cref="JdbcCommand"/> object executes.
+        /// </summary>
+        public new JdbcTransaction Transaction
+        {
+            get => (JdbcTransaction)base.Transaction;
+            set => base.Transaction = value;
+        }
+
+        /// <summary>
         /// Gets the collection of <see cref="JdbcParameter"/> objects.
         /// </summary>
         public new JdbcParameterCollection Parameters

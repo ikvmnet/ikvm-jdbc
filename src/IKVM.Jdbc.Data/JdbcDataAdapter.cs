@@ -6,8 +6,6 @@ namespace IKVM.Jdbc.Data
     public class JdbcDataAdapter : DbDataAdapter
     {
 
-
-
     }
 
 }
