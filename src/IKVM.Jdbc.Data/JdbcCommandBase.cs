@@ -16,11 +16,11 @@ namespace IKVM.Jdbc.Data
     public abstract class JdbcCommandBase : DbCommand
     {
 
-        readonly object syncRoot = new object();
-        readonly JdbcParameterCollection parameters = new JdbcParameterCollection();
-        JdbcConnection connection;
-        PreparedStatement prepared;
-        Statement executing;
+        readonly object _syncRoot = new object();
+        readonly JdbcParameterCollection _parameters = new JdbcParameterCollection();
+        JdbcConnection _connection;
+        PreparedStatement _prepared;
+        Statement _executing;
 
         /// <summary>
         /// Creates a new command.
@@ -36,7 +36,7 @@ namespace IKVM.Jdbc.Data
         /// <param name="connection"></param>
         internal JdbcCommandBase(JdbcConnection connection)
         {
-            this.connection = connection;
+            this._connection = connection;
         }
 
         /// <summary>
@@ -46,9 +46,9 @@ namespace IKVM.Jdbc.Data
         /// <exception cref="JdbcException"></exception>
         void ExecutingLock(Action action)
         {
-            lock (syncRoot)
+            lock (_syncRoot)
             {
-                if (executing != null)
+                if (_executing != null)
                     throw new JdbcException("The command is already executing a statement.");
 
                 action();
@@ -62,9 +62,9 @@ namespace IKVM.Jdbc.Data
         /// <exception cref="JdbcException"></exception>
         T ExecutingLock<T>(Func<T> func)
         {
-            lock (syncRoot)
+            lock (_syncRoot)
             {
-                if (executing != null)
+                if (_executing != null)
                     throw new JdbcException("The command is already executing a statement.");
 
                 return func();
@@ -76,8 +76,8 @@ namespace IKVM.Jdbc.Data
         /// </summary>
         protected override DbConnection DbConnection
         {
-            get => connection;
-            set => ExecutingLock(() => connection = (JdbcConnection)value);
+            get => _connection;
+            set => ExecutingLock(() => _connection = (JdbcConnection)value);
         }
 
         /// <summary>
@@ -108,7 +108,7 @@ namespace IKVM.Jdbc.Data
         /// <summary>
         /// Gets the collection of <see cref="DbParameter"/> objects.
         /// </summary>
-        protected override DbParameterCollection DbParameterCollection => parameters;
+        protected override DbParameterCollection DbParameterCollection => _parameters;
 
         /// <summary>
         /// Gets or sets the <see cref="DbTransaction"/> within which this <see cref="JdbcCommandBase"/> object executes.
@@ -121,7 +121,7 @@ namespace IKVM.Jdbc.Data
         /// <returns></returns>
         protected override DbParameter CreateDbParameter()
         {
-            if (prepared != null)
+            if (_prepared != null)
                 throw new JdbcException("Command is already prepared.");
 
             return new JdbcParameter();
@@ -135,13 +135,13 @@ namespace IKVM.Jdbc.Data
         {
             var b = new StringBuilder("{{ ");
 
-            if (parameters.Any(i => i.Direction == ParameterDirection.ReturnValue))
+            if (_parameters.Any(i => i.Direction == ParameterDirection.ReturnValue))
                 b.Append("? = ");
 
-            for (int i = 0; i < parameters.Count; i++)
+            for (int i = 0; i < _parameters.Count; i++)
             {
                 b.Append("?");
-                if (i < parameters.Count - 1)
+                if (i < _parameters.Count - 1)
                     b.Append(", ");
             }
 
@@ -157,13 +157,13 @@ namespace IKVM.Jdbc.Data
         {
             ExecutingLock(() =>
             {
-                if (connection == null)
+                if (_connection == null)
                     throw new JdbcException("Connection must be available.");
 
-                if (connection.State != ConnectionState.Open)
+                if (_connection.State != ConnectionState.Open)
                     throw new JdbcException("Connection must be open.");
 
-                if (prepared != null)
+                if (_prepared != null)
                     throw new JdbcException("Command is already prepared.");
 
                 try
@@ -171,10 +171,10 @@ namespace IKVM.Jdbc.Data
                     switch (CommandType)
                     {
                         case CommandType.Text:
-                            prepared = connection.connection.prepareStatement(CommandText);
+                            _prepared = _connection._connection.prepareStatement(CommandText);
                             break;
                         case CommandType.StoredProcedure:
-                            prepared = connection.connection.prepareCall(BuildJdbcStoredProcedureCallString());
+                            _prepared = _connection._connection.prepareCall(BuildJdbcStoredProcedureCallString());
                             break;
                         case CommandType.TableDirect:
                             throw new NotImplementedException();
@@ -227,68 +227,68 @@ namespace IKVM.Jdbc.Data
         {
             return ExecutingLock(() =>
             {
-                if (connection == null)
+                if (_connection == null)
                     throw new JdbcException("Connection must be available.");
 
-                if (connection.State != ConnectionState.Open)
+                if (_connection.State != ConnectionState.Open)
                     throw new JdbcException("Connection must be open.");
 
                 try
                 {
                     // always prepare if we're going to use parameters
-                    if (parameters.Count > 0)
+                    if (_parameters.Count > 0)
                         Prepare();
 
                     // if we're doing an implicit return value for a stored procedure, it is always index 0, and everything is offset
                     var offset = CommandType == CommandType.StoredProcedure ? 1 : 0;
 
-                    if (prepared is not null)
+                    if (_prepared is not null)
                     {
-                        foreach (JdbcParameter parameter in parameters)
-                            ApplyParameterValue(prepared, parameter, offset);
+                        foreach (JdbcParameter parameter in _parameters)
+                            ApplyParameterValue(_prepared, parameter, offset);
 
                         try
                         {
                             // mark statement as excuting
-                            executing = prepared;
+                            _executing = _prepared;
 
                             // release lock while executing, but reattain upon completion
-                            Monitor.Exit(syncRoot);
+                            Monitor.Exit(_syncRoot);
                             try
                             {
-                                prepared.setQueryTimeout(CommandTimeout);
-                                prepared.execute();
+                                _prepared.setQueryTimeout(CommandTimeout);
+                                _prepared.execute();
                             }
                             finally
                             {
-                                Monitor.Enter(syncRoot);
+                                Monitor.Enter(_syncRoot);
                             }
 
-                            return prepared.getUpdateCount();
+                            return _prepared.getUpdateCount();
                         }
                         finally
                         {
-                            executing = null;
+                            _executing = null;
                         }
                     }
                     else
                     {
                         try
                         {
-                            executing = connection.connection.createStatement();
-                            executing.setQueryTimeout(CommandTimeout);
+                            _executing = _connection._connection.createStatement();
+                            _executing.setQueryTimeout(CommandTimeout);
 
                             // release lock while executing, but reattain upon completion
-                            Monitor.Exit(syncRoot);
+                            Monitor.Exit(_syncRoot);
                             try
                             {
                                 switch (CommandType)
                                 {
                                     case CommandType.Text:
-                                        executing.execute(CommandText);
+                                        _executing.execute(CommandText);
                                         break;
                                     case CommandType.StoredProcedure:
-                                        executing.execute(BuildJdbcStoredProcedureCallString());
+                                        _executing.execute(BuildJdbcStoredProcedureCallString());
                                         break;
                                     case CommandType.TableDirect:
                                         throw new NotImplementedException();
@@ -296,14 +296,14 @@ namespace IKVM.Jdbc.Data
                             }
                             finally
                             {
-                                Monitor.Enter(syncRoot);
+                                Monitor.Enter(_syncRoot);
                             }
 
-                            return executing.getUpdateCount();
+                            return _executing.getUpdateCount();
                         }
                         finally
                         {
-                            executing = null;
+                            _executing = null;
                         }
                     }
 
@@ -339,72 +339,72 @@ namespace IKVM.Jdbc.Data
         {
             return ExecutingLock(() =>
             {
-                if (connection == null)
+                if (_connection == null)
                     throw new JdbcException("Connection must be available.");
 
-                if (connection.State != ConnectionState.Open)
+                if (_connection.State != ConnectionState.Open)
                     throw new JdbcException("Connection must be open.");
 
                 try
                 {
                     // always prepare if we're going to use parameters
-                    if (parameters.Count > 0)
+                    if (_parameters.Count > 0)
                         Prepare();
 
                     // if we're doing an implicit return value for a stored procedure, it is always index 0, adn everything is offset
                     var offset = CommandType == CommandType.StoredProcedure ? 1 : 0;
 
-                    if (prepared is not null)
+                    if (_prepared is not null)
                     {
-                        foreach (JdbcParameter parameter in parameters)
-                            ApplyParameterValue(prepared, parameter, offset);
+                        foreach (JdbcParameter parameter in _parameters)
+                            ApplyParameterValue(_prepared, parameter, offset);
 
                         try
                         {
                             // mark statement as excuting
-                            executing = prepared;
+                            _executing = _prepared;
 
                             ResultSet rs;
 
                             // release lock while executing, but reattain upon completion
-                            Monitor.Exit(syncRoot);
+                            Monitor.Exit(_syncRoot);
                             try
                             {
-                                prepared.setQueryTimeout(CommandTimeout);
-                                rs = prepared.executeQuery();
+                                _prepared.setQueryTimeout(CommandTimeout);
+                                rs = _prepared.executeQuery();
                             }
                             finally
                             {
-                                Monitor.Enter(syncRoot);
+                                Monitor.Enter(_syncRoot);
                             }
 
-                            return new JdbcDataReader(rs, prepared.getUpdateCount());
+                            return new JdbcDataReader(rs, _prepared.getUpdateCount());
                         }
                         finally
                         {
-                            executing = null;
+                            _executing = null;
                         }
                     }
                     else
                     {
                         try
                         {
-                            executing = connection.connection.createStatement();
-                            executing.setQueryTimeout(CommandTimeout);
+                            _executing = _connection._connection.createStatement();
+                            _executing.setQueryTimeout(CommandTimeout);
 
                             ResultSet rs = null;
 
                             // release lock while executing, but reattain upon completion
-                            Monitor.Exit(syncRoot);
+                            Monitor.Exit(_syncRoot);
                             try
                             {
                                 switch (CommandType)
                                 {
                                     case CommandType.Text:
-                                        rs = executing.executeQuery(CommandText);
+                                        rs = _executing.executeQuery(CommandText);
                                         break;
                                     case CommandType.StoredProcedure:
-                                        rs = executing.executeQuery(BuildJdbcStoredProcedureCallString());
+                                        rs = _executing.executeQuery(BuildJdbcStoredProcedureCallString());
                                         break;
                                     case CommandType.TableDirect:
                                         throw new NotImplementedException();
@@ -412,14 +412,14 @@ namespace IKVM.Jdbc.Data
                             }
                             finally
                             {
-                                Monitor.Enter(syncRoot);
+                                Monitor.Enter(_syncRoot);
                             }
 
-                            return new JdbcDataReader(rs, executing.getUpdateCount());
+                            return new JdbcDataReader(rs, _executing.getUpdateCount());
                         }
                         finally
                         {
-                            executing = null;
+                            _executing = null;
                         }
                     }
 
@@ -437,9 +437,9 @@ namespace IKVM.Jdbc.Data
         /// </summary>
         public override void Cancel()
         {
-            lock (syncRoot)
-                if (executing != null)
-                    executing.cancel();
+            lock (_syncRoot)
+                if (_executing != null)
+                    _executing.cancel();
         }
 
     }

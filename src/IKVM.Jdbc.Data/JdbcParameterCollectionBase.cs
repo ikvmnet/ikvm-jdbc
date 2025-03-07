@@ -13,7 +13,7 @@ namespace IKVM.Jdbc.Data
     public abstract class JdbcParameterCollectionBase : DbParameterCollection
     {
 
-        readonly List<JdbcParameter> self = new();
+        readonly List<JdbcParameter> _self = new();
 
         /// <summary>
         /// Initializes a new instance.
@@ -31,7 +31,7 @@ namespace IKVM.Jdbc.Data
         /// <summary>
         /// Gets the number of items in the collection.
         /// </summary>
-        public override int Count => self.Count;
+        public override int Count => _self.Count;
 
         /// <summary>
         /// Adds the specified object to the collection.
@@ -44,8 +44,8 @@ namespace IKVM.Jdbc.Data
             if (value is not JdbcParameter p)
                 throw new JdbcException("Parameter must be a JdbcParameter.");
 
-            self.Add(p);
-            return self.Count - 1;
+            _self.Add(p);
+            return _self.Count - 1;
         }
 
         /// <summary>
@@ -63,7 +63,7 @@ namespace IKVM.Jdbc.Data
         /// </summary>
         public override void Clear()
         {
-            self.Clear();
+            _self.Clear();
         }
 
         /// <summary>
@@ -73,7 +73,7 @@ namespace IKVM.Jdbc.Data
         /// <returns></returns>
         public override bool Contains(object parameter)
         {
-            return parameter is not JdbcParameter p ? false : self.Contains(p);
+            return parameter is not JdbcParameter p ? false : _self.Contains(p);
         }
 
         /// <summary>
@@ -83,7 +83,7 @@ namespace IKVM.Jdbc.Data
         /// <returns></returns>
         public override bool Contains(string parameterName)
         {
-            return self.Any(i => i.ParameterName == parameterName);
+            return _self.Any(i => i.ParameterName == parameterName);
         }
 
         /// <summary>
@@ -93,8 +93,8 @@ namespace IKVM.Jdbc.Data
         /// <param name="index"></param>
         public override void CopyTo(Array array, int index)
         {
-            for (int i = 0; i < self.Count; i++)
-                array.SetValue(self[i], index + i);
+            for (int i = 0; i < _self.Count; i++)
+                array.SetValue(_self[i], index + i);
         }
 
         /// <summary>
@@ -104,7 +104,7 @@ namespace IKVM.Jdbc.Data
         /// <returns></returns>
         public override int IndexOf(object parameter)
         {
-            return parameter is not JdbcParameter p ? -1 : self.IndexOf(p);
+            return parameter is not JdbcParameter p ? -1 : _self.IndexOf(p);
         }
 
         /// <summary>
@@ -117,7 +117,7 @@ namespace IKVM.Jdbc.Data
             if (string.IsNullOrWhiteSpace(parameterName))
                 throw new ArgumentException($"'{nameof(parameterName)}' cannot be null or whitespace.", nameof(parameterName));
 
-            return self.FindIndex(i => i.ParameterName == parameterName);
+            return _self.FindIndex(i => i.ParameterName == parameterName);
         }
 
         /// <summary>
@@ -131,7 +131,7 @@ namespace IKVM.Jdbc.Data
             if (parameter is not JdbcParameter p)
                 throw new ArgumentException("Parameter must be a JdbcParameter.", nameof(parameter));
 
-            self.Insert(index, p);
+            _self.Insert(index, p);
         }
 
         /// <summary>
@@ -144,7 +144,7 @@ namespace IKVM.Jdbc.Data
             if (parameter is null)
                 throw new ArgumentNullException(nameof(parameter));
 
-            return parameter is not JdbcParameter p ? false : self.Remove(p);
+            return parameter is not JdbcParameter p ? false : _self.Remove(p);
         }
 
         /// <summary>
@@ -156,7 +156,7 @@ namespace IKVM.Jdbc.Data
             if (parameter is not JdbcParameter p)
                 return;
 
-            self.Remove(p);
+            _self.Remove(p);
         }
 
         /// <summary>
@@ -165,7 +165,7 @@ namespace IKVM.Jdbc.Data
         /// <param name="index"></param>
         public override void RemoveAt(int index)
         {
-            self.RemoveAt(index);
+            _self.RemoveAt(index);
         }
 
         /// <summary>
@@ -197,7 +197,7 @@ namespace IKVM.Jdbc.Data
         /// <returns></returns>
         protected IEnumerator<JdbcParameter> GetJdbcEnumerator()
         {
-            return self.GetEnumerator();
+            return _self.GetEnumerator();
         }
 
         /// <summary>
@@ -207,7 +207,7 @@ namespace IKVM.Jdbc.Data
         /// <returns></returns>
         protected override DbParameter GetParameter(int index)
         {
-            return self[index];
+            return _self[index];
         }
 
         /// <summary>
@@ -220,7 +220,7 @@ namespace IKVM.Jdbc.Data
             if (parameterName is null)
                 throw new ArgumentNullException(nameof(parameterName));
 
-            return self.FirstOrDefault(i => i.ParameterName == parameterName);
+            return _self.FirstOrDefault(i => i.ParameterName == parameterName);
         }
 
         /// <summary>
@@ -234,7 +234,7 @@ namespace IKVM.Jdbc.Data
             if (value is not JdbcParameter p)
                 throw new JdbcException("Parameter must be a JdbcParameter.");
 
-            self[index] = p;
+            _self[index] = p;
         }
 
         /// <summary>

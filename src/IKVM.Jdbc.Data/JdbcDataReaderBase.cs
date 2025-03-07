@@ -14,9 +14,9 @@ namespace IKVM.Jdbc.Data
     public abstract class JdbcDataReaderBase : DbDataReader
     {
 
-        ResultSet rs;
-        bool hasRows;
-        int recordsAffected;
+        ResultSet _rs;
+        int _recordsAffected;
+        bool _hasRows;
 
         /// <summary>
         /// Initializes a new instance.
@@ -25,9 +25,9 @@ namespace IKVM.Jdbc.Data
         /// <param name="recordsAffected"></param>
         internal JdbcDataReaderBase(ResultSet rs, int recordsAffected)
         {
-            this.rs = rs ?? throw new ArgumentNullException(nameof(rs));
-            this.recordsAffected = recordsAffected;
-            this.hasRows = rs.isBeforeFirst();
+            this._rs = rs ?? throw new ArgumentNullException(nameof(rs));
+            this._recordsAffected = recordsAffected;
+            this._hasRows = rs.isBeforeFirst();
         }
 
         /// <summary>
@@ -52,22 +52,22 @@ namespace IKVM.Jdbc.Data
         /// <summary>
         /// Gets the number of columns in the current row.
         /// </summary>
-        public override int FieldCount => rs.getMetaData().getColumnCount();
+        public override int FieldCount => _rs.getMetaData().getColumnCount();
 
         /// <summary>
         /// Gets a value that indiciates whether this <see cref="JdbcDataReaderBase"/> has one or more rows.
         /// </summary>
-        public override bool HasRows => hasRows;
+        public override bool HasRows => _hasRows;
 
         /// <summary>
         /// Gets a value indicating whether this <see cref="JdbcDataReaderBase"/> is closed.
         /// </summary>
-        public override bool IsClosed => rs.isClosed();
+        public override bool IsClosed => _rs.isClosed();
 
         /// <summary>
         /// Gets the number of rows changed, inserted or deleted by the SQL statement.
         /// </summary>
-        public override int RecordsAffected => recordsAffected;
+        public override int RecordsAffected => _recordsAffected;
 
         /// <summary>
         /// Gets an <see cref="IEnumerator"/> that can be used to iterate through the rows in the <see cref="JdbcDataReaderBase"/>.
@@ -90,7 +90,7 @@ namespace IKVM.Jdbc.Data
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
 
-            var type = rs.getMetaData().getColumnType(ordinal + 1);
+            var type = _rs.getMetaData().getColumnType(ordinal + 1);
 
             if (type == JDBCType.ARRAY.ordinal())
                 return typeof(System.Array);
@@ -222,7 +222,7 @@ namespace IKVM.Jdbc.Data
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
 
-            return rs.getMetaData().getColumnTypeName(ordinal);
+            return _rs.getMetaData().getColumnTypeName(ordinal);
         }
 
         /// <summary>
@@ -235,7 +235,7 @@ namespace IKVM.Jdbc.Data
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
 
-            return rs.getMetaData().getColumnName(ordinal + 1);
+            return _rs.getMetaData().getColumnName(ordinal + 1);
         }
 
         /// <summary>
@@ -248,7 +248,7 @@ namespace IKVM.Jdbc.Data
             if (name is null)
                 throw new ArgumentNullException(nameof(name));
 
-            return rs.findColumn(name) is int i && i > 0 ? i - 1 : -1;
+            return _rs.findColumn(name) is int i && i > 0 ? i - 1 : -1;
         }
 
         /// <summary>
@@ -264,108 +264,108 @@ namespace IKVM.Jdbc.Data
 
             // java starts at 1
             ordinal++;
-            var type = (JDBCType.__Enum)rs.getMetaData().getColumnType(ordinal);
+            var type = (JDBCType.__Enum)_rs.getMetaData().getColumnType(ordinal);
 
             switch (type)
             {
                 case JDBCType.__Enum.ARRAY:
                     {
-                        var v = rs.getArray(ordinal);
-                        return rs.wasNull() ? DBNull.Value : v.getArray();
+                        var v = _rs.getArray(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : v.getArray();
                     }
                 case JDBCType.__Enum.BIGINT:
                     {
-                        var v = rs.getLong(ordinal);
-                        return rs.wasNull() ? DBNull.Value : v;
+                        var v = _rs.getLong(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : v;
                     }
                 case JDBCType.__Enum.BINARY:
                     {
-                        var v = rs.getBytes(ordinal);
-                        return rs.wasNull() ? DBNull.Value : v;
+                        var v = _rs.getBytes(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : v;
                     }
                 case JDBCType.__Enum.BIT:
                     {
-                        var v = rs.getBoolean(ordinal);
-                        return rs.wasNull() ? DBNull.Value : v;
+                        var v = _rs.getBoolean(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : v;
                     }
                 case JDBCType.__Enum.BLOB:
                     {
-                        var v = rs.getBlob(ordinal);
-                        return rs.wasNull() ? DBNull.Value : v;
+                        var v = _rs.getBlob(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : v;
                     }
                 case JDBCType.__Enum.BOOLEAN:
                     {
-                        var v = rs.getBoolean(ordinal);
-                        return rs.wasNull() ? DBNull.Value : v;
+                        var v = _rs.getBoolean(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : v;
                     }
                 case JDBCType.__Enum.CHAR:
                     {
-                        var v = rs.getString(ordinal);
-                        return rs.wasNull() ? DBNull.Value : v;
+                        var v = _rs.getString(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : v;
                     }
                 case JDBCType.__Enum.CLOB:
                     {
-                        var v = rs.getClob(ordinal);
-                        return rs.wasNull() ? DBNull.Value : v;
+                        var v = _rs.getClob(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : v;
                     }
                 case JDBCType.__Enum.DATALINK:
                     throw new NotSupportedException();
                 case JDBCType.__Enum.DATE:
                     {
-                        var v = rs.getDate(ordinal);
-                        return rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(v.getTime()).UtcDateTime;
+                        var v = _rs.getDate(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(v.getTime()).UtcDateTime;
                     }
                 case JDBCType.__Enum.DECIMAL:
                     {
-                        var v = rs.getBigDecimal(ordinal);
-                        return rs.wasNull() ? DBNull.Value : decimal.Parse(v.toString());
+                        var v = _rs.getBigDecimal(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : decimal.Parse(v.toString());
                     }
                 case JDBCType.__Enum.DISTINCT:
                     throw new NotImplementedException();
                 case JDBCType.__Enum.DOUBLE:
                     {
-                        var v = rs.getDouble(ordinal);
-                        return rs.wasNull() ? DBNull.Value : v;
+                        var v = _rs.getDouble(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : v;
                     }
                 case JDBCType.__Enum.FLOAT:
                     {
-                        var v = rs.getFloat(ordinal);
-                        return rs.wasNull() ? DBNull.Value : v;
+                        var v = _rs.getFloat(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : v;
                     }
                 case JDBCType.__Enum.INTEGER:
                     {
-                        var v = rs.getInt(ordinal);
-                        return rs.wasNull() ? DBNull.Value : v;
+                        var v = _rs.getInt(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : v;
                     }
                 case JDBCType.__Enum.JAVA_OBJECT:
                     {
-                        var v = rs.getObject(ordinal);
-                        return rs.wasNull() ? DBNull.Value : v;
+                        var v = _rs.getObject(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : v;
                     }
                 case JDBCType.__Enum.LONGNVARCHAR:
                     {
-                        var v = rs.getNString(ordinal);
-                        return rs.wasNull() ? DBNull.Value : v;
+                        var v = _rs.getNString(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : v;
                     }
                 case JDBCType.__Enum.LONGVARBINARY:
                     {
-                        var v = rs.getBytes(ordinal);
-                        return rs.wasNull() ? DBNull.Value : v;
+                        var v = _rs.getBytes(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : v;
                     }
                 case JDBCType.__Enum.LONGVARCHAR:
                     {
-                        var v = rs.getString(ordinal);
-                        return rs.wasNull() ? DBNull.Value : v;
+                        var v = _rs.getString(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : v;
                     }
                 case JDBCType.__Enum.NCHAR:
                     {
-                        var v = rs.getNString(ordinal);
-                        return rs.wasNull() ? DBNull.Value : v;
+                        var v = _rs.getNString(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : v;
                     }
                 case JDBCType.__Enum.NCLOB:
                     {
-                        var v = rs.getNClob(ordinal);
-                        return rs.wasNull() ? DBNull.Value : v;
+                        var v = _rs.getNClob(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : v;
                     }
                 case JDBCType.__Enum.NULL:
                     return DBNull.Value;
@@ -373,15 +373,15 @@ namespace IKVM.Jdbc.Data
                     throw new NotImplementedException();
                 case JDBCType.__Enum.NVARCHAR:
                     {
-                        var v = rs.getNString(ordinal);
-                        return rs.wasNull() ? DBNull.Value : v;
+                        var v = _rs.getNString(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : v;
                     }
                 case JDBCType.__Enum.OTHER:
                     throw new NotSupportedException();
                 case JDBCType.__Enum.REAL:
                     {
-                        var v = rs.getFloat(ordinal);
-                        return rs.wasNull() ? DBNull.Value : v;
+                        var v = _rs.getFloat(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : v;
                     }
                 case JDBCType.__Enum.REF:
                     throw new NotSupportedException();
@@ -391,50 +391,50 @@ namespace IKVM.Jdbc.Data
                     throw new NotImplementedException();
                 case JDBCType.__Enum.SMALLINT:
                     {
-                        var v = rs.getShort(ordinal);
-                        return rs.wasNull() ? DBNull.Value : v;
+                        var v = _rs.getShort(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : v;
                     }
                 case JDBCType.__Enum.SQLXML:
                     {
-                        var v = rs.getSQLXML(ordinal);
-                        return rs.wasNull() ? DBNull.Value : v;
+                        var v = _rs.getSQLXML(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : v;
                     }
                 case JDBCType.__Enum.STRUCT:
                     throw new NotSupportedException();
                 case JDBCType.__Enum.TIME:
                     {
-                        var v = rs.getTime(ordinal);
-                        return rs.wasNull() ? DBNull.Value : TimeSpan.FromMilliseconds(v.getTime());
+                        var v = _rs.getTime(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : TimeSpan.FromMilliseconds(v.getTime());
                     }
                 case JDBCType.__Enum.TIMESTAMP:
                     {
-                        var v = rs.getTime(ordinal);
-                        return rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(v.getTime()).UtcDateTime;
+                        var v = _rs.getTime(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(v.getTime()).UtcDateTime;
                     }
                 case JDBCType.__Enum.TIMESTAMP_WITH_TIMEZONE:
                     {
-                        var v = rs.getTime(ordinal);
-                        return rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(v.getTime());
+                        var v = _rs.getTime(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(v.getTime());
                     }
                 case JDBCType.__Enum.TIME_WITH_TIMEZONE:
                     {
-                        var v = rs.getTime(ordinal);
-                        return rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(v.getTime());
+                        var v = _rs.getTime(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(v.getTime());
                     }
                 case JDBCType.__Enum.TINYINT:
                     {
-                        var v = rs.getByte(ordinal);
-                        return rs.wasNull() ? DBNull.Value : v;
+                        var v = _rs.getByte(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : v;
                     }
                 case JDBCType.__Enum.VARBINARY:
                     {
-                        var v = rs.getBytes(ordinal);
-                        return rs.wasNull() ? DBNull.Value : v;
+                        var v = _rs.getBytes(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : v;
                     }
                 case JDBCType.__Enum.VARCHAR:
                     {
-                        var v = rs.getString(ordinal);
-                        return rs.wasNull() ? DBNull.Value : v;
+                        var v = _rs.getString(ordinal);
+                        return _rs.wasNull() ? DBNull.Value : v;
                     }
                 default:
                     throw new NotSupportedException();
@@ -451,7 +451,7 @@ namespace IKVM.Jdbc.Data
             if (values is null)
                 throw new ArgumentNullException(nameof(values));
 
-            var n = rs.getMetaData().getColumnCount();
+            var n = _rs.getMetaData().getColumnCount();
             for (int i = 0; i < n; i++)
                 values[i] = GetValue(i);
 
@@ -466,7 +466,7 @@ namespace IKVM.Jdbc.Data
         public override bool IsDBNull(int ordinal)
         {
             GetValue(ordinal);
-            return rs.wasNull();
+            return _rs.wasNull();
         }
 
         /// <summary>
@@ -693,10 +693,10 @@ namespace IKVM.Jdbc.Data
         /// <returns></returns>
         public override bool Read()
         {
-            if (rs == null)
+            if (_rs == null)
                 throw new JdbcException("JdbcReader is closed.");
 
-            return rs.next();
+            return _rs.next();
         }
 
         /// <summary>
@@ -705,9 +705,9 @@ namespace IKVM.Jdbc.Data
         /// <returns></returns>
         public override bool NextResult()
         {
-            rs = null;
-            hasRows = false;
-            recordsAffected = 0;
+            _rs = null;
+            _hasRows = false;
+            _recordsAffected = 0;
             return false;
         }
 
@@ -716,12 +716,12 @@ namespace IKVM.Jdbc.Data
         /// </summary>
         public override void Close()
         {
-            if (rs != null)
+            if (_rs != null)
             {
-                rs.close();
-                rs = null;
-                hasRows = false;
-                recordsAffected = 0;
+                _rs.close();
+                _rs = null;
+                _hasRows = false;
+                _recordsAffected = 0;
             }
 
             base.Close();

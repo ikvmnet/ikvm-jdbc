@@ -14,10 +14,10 @@ namespace IKVM.Jdbc.Data
     public class JdbcConnection : DbConnection
     {
 
-        internal JdbcConnectionStringBuilder connectionStringBuilder;
-        internal java.sql.Connection connection;
-        private readonly bool leaveOpen;
-        internal JdbcTransaction transaction;
+        internal JdbcConnectionStringBuilder _connectionStringBuilder;
+        internal java.sql.Connection _connection;
+        readonly bool _leaveOpen;
+        internal JdbcTransaction _transaction;
 
         /// <summary>
         /// Initializes a new instance.
@@ -38,10 +38,10 @@ namespace IKVM.Jdbc.Data
             if (url is null)
                 throw new ArgumentNullException(nameof(url));
 
-            this.connectionStringBuilder = new JdbcConnectionStringBuilder() { Url = url };
+            _connectionStringBuilder = new JdbcConnectionStringBuilder() { Url = url };
 
             foreach (var kvp in properties)
-                connectionStringBuilder.Add(kvp.Key, kvp.Value);
+                _connectionStringBuilder.Add(kvp.Key, kvp.Value);
         }
 
         /// <summary>
@@ -51,7 +51,7 @@ namespace IKVM.Jdbc.Data
         public JdbcConnection(string connectionString) :
             this()
         {
-            this.connectionStringBuilder = new JdbcConnectionStringBuilder(connectionString);
+            _connectionStringBuilder = new JdbcConnectionStringBuilder(connectionString);
         }
 
         /// <summary>
@@ -61,22 +61,22 @@ namespace IKVM.Jdbc.Data
         /// <param name="leaveOpen"></param>
         public JdbcConnection(Connection connection, bool leaveOpen = false)
         {
-            this.connectionStringBuilder = new JdbcConnectionStringBuilder() { Url = connection.getMetaData().getURL() };
-            this.connection = connection;
-            this.leaveOpen = leaveOpen;
+            _connectionStringBuilder = new JdbcConnectionStringBuilder() { Url = connection.getMetaData().getURL() };
+            _connection = connection;
+            _leaveOpen = leaveOpen;
         }
 
         /// <summary>
         /// Gets the state of the connection.
         /// </summary>
-        public override ConnectionState State => connection == null ? ConnectionState.Closed : connection.isClosed() ? ConnectionState.Closed : ConnectionState.Open;
+        public override ConnectionState State => _connection == null ? ConnectionState.Closed : _connection.isClosed() ? ConnectionState.Closed : ConnectionState.Open;
 
         /// <summary>
         /// Gets or sets the connection string.
         /// </summary>
         public override string ConnectionString
         {
-            get => connectionStringBuilder?.ConnectionString;
+            get => _connectionStringBuilder?.ConnectionString;
             set => SetConnectionString(value);
         }
 
@@ -91,24 +91,24 @@ namespace IKVM.Jdbc.Data
                 throw new JdbcException("Connection must be closed to update connection string.");
 
             // reset connection string
-            connectionStringBuilder = new JdbcConnectionStringBuilder(value);
-            connection = null;
+            _connectionStringBuilder = new JdbcConnectionStringBuilder(value);
+            _connection = null;
         }
 
         /// <summary>
         /// Gets the current database.
         /// </summary>
-        public override string Database => connection != null ? connection.getCatalog() : throw new JdbcException("Connection is not open.");
+        public override string Database => _connection != null ? _connection.getCatalog() : throw new JdbcException("Connection is not open.");
 
         /// <summary>
         /// Gets the current datasource.
         /// </summary>
-        public override string DataSource => connection != null ? null : throw new JdbcException("Connection is not open.");
+        public override string DataSource => _connection != null ? null : throw new JdbcException("Connection is not open.");
 
         /// <summary>
         /// Gets the version of the database server if available.
         /// </summary>
-        public override string ServerVersion => connection != null ? connection.getMetaData().getDatabaseProductVersion() : throw new JdbcException("Connection is not open.");
+        public override string ServerVersion => _connection != null ? _connection.getMetaData().getDatabaseProductVersion() : throw new JdbcException("Connection is not open.");
 
         /// <summary>
         /// Attempts to change the database.
@@ -117,11 +117,11 @@ namespace IKVM.Jdbc.Data
         public override void ChangeDatabase(string databaseName)
         {
             if (State != ConnectionState.Open)
-                throw new JdbcException("Connection must be open change databases.");
+                throw new JdbcException("Connection must be open to change databases.");
 
             try
             {
-                connection.setCatalog(databaseName);
+                _connection.setCatalog(databaseName);
             }
             catch (SQLException e)
             {
@@ -140,8 +140,8 @@ namespace IKVM.Jdbc.Data
 
             try
             {
-                if (leaveOpen == false)
-                    connection.close();
+                if (_leaveOpen == false)
+                    _connection.close();
             }
             catch (SQLException e)
             {
@@ -156,29 +156,29 @@ namespace IKVM.Jdbc.Data
         public override void Open()
         {
             // already open
-            if (connection != null && State == ConnectionState.Open)
+            if (_connection != null && State == ConnectionState.Open)
                 return;
 
             // already open
-            if (connection != null && State == ConnectionState.Connecting)
+            if (_connection != null && State == ConnectionState.Connecting)
                 return;
 
             // was open at one time
-            if (connection != null)
+            if (_connection != null)
                 throw new JdbcException("Connection has already been opened.");
 
             // haven't configured the connection string
-            if (connectionStringBuilder == null)
+            if (_connectionStringBuilder == null)
                 throw new JdbcException("Connection string has not been configured.");
 
             try
             {
                 var props = new java.util.Properties();
-                foreach (KeyValuePair<string, object> entry in connectionStringBuilder)
+                foreach (KeyValuePair<string, object> entry in _connectionStringBuilder)
                     if (string.Equals(entry.Key, "url", StringComparison.OrdinalIgnoreCase) == false)
                         props.setProperty(entry.Key, entry.Value.ToString());
 
-                connection = DriverManager.getConnection(connectionStringBuilder.Url, props);
+                _connection = DriverManager.getConnection(_connectionStringBuilder.Url, props);
             }
             catch (SQLException e)
             {
@@ -190,7 +190,7 @@ namespace IKVM.Jdbc.Data
         /// Gets the current database transaction.
         /// </summary>
         /// <returns></returns>
-        public JdbcTransaction Transaction => transaction;
+        public JdbcTransaction Transaction => _transaction;
 
         /// <summary>
         /// Starts a new JDBC transaction by disabling auto-commit.
@@ -203,12 +203,12 @@ namespace IKVM.Jdbc.Data
             if (State != ConnectionState.Open)
                 throw new JdbcException("Connection is not opened.");
 
-            if (transaction != null)
+            if (_transaction != null)
                 throw new JdbcException("JDBC only supports a single ambient transaction.");
 
             try
             {
-                return transaction = new JdbcTransaction(this, isolationLevel);
+                return _transaction = new JdbcTransaction(this, isolationLevel);
             }
             catch (SQLException e)
             {

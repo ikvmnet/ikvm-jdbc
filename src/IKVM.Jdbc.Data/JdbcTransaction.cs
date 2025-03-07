@@ -14,8 +14,8 @@ namespace IKVM.Jdbc.Data
     public class JdbcTransaction : DbTransaction
     {
 
-        readonly JdbcConnection connection;
-        readonly Dictionary<string, Savepoint> savepoints = new();
+        readonly JdbcConnection _connection;
+        readonly Dictionary<string, Savepoint> _savepoints = new();
 
         /// <summary>
         /// Initializes a new instance.
@@ -24,14 +24,14 @@ namespace IKVM.Jdbc.Data
         /// <param name="isolationLevel"></param>
         internal JdbcTransaction(JdbcConnection connection, IsolationLevel isolationLevel)
         {
-            this.connection = connection ?? throw new ArgumentNullException(nameof(connection));
+            this._connection = connection ?? throw new ArgumentNullException(nameof(connection));
 
-            if (connection.connection.getAutoCommit() == false)
+            if (connection._connection.getAutoCommit() == false)
                 throw new JdbcException("A JDBC transaction is already open.");
             else
             {
                 // set isolation level
-                connection.connection.setTransactionIsolation(isolationLevel switch
+                connection._connection.setTransactionIsolation(isolationLevel switch
                 {
                     IsolationLevel.Unspecified => java.sql.Connection.TRANSACTION_NONE,
                     IsolationLevel.Chaos => java.sql.Connection.TRANSACTION_NONE,
@@ -43,19 +43,22 @@ namespace IKVM.Jdbc.Data
                 });
 
                 // disable auto commit
-                connection.connection.setAutoCommit(false);
+                connection._connection.setAutoCommit(false);
             }
         }
 
         /// <summary>
         /// Gets the connection associated to this transaction.
         /// </summary>
-        protected override DbConnection DbConnection => connection;
+        protected override DbConnection DbConnection => _connection;
+
+        /// <inheritdoc />
+        public new JdbcConnection Connection => _connection;
 
         /// <summary>
         /// Gets the isolation level of the current transaction.
         /// </summary>
-        public override IsolationLevel IsolationLevel => connection.connection.getTransactionIsolation() switch
+        public override IsolationLevel IsolationLevel => _connection._connection.getTransactionIsolation() switch
         {
             java.sql.Connection.TRANSACTION_NONE => IsolationLevel.Unspecified,
             java.sql.Connection.TRANSACTION_READ_COMMITTED => IsolationLevel.ReadCommitted,
@@ -71,13 +74,13 @@ namespace IKVM.Jdbc.Data
         /// <exception cref="JdbcException"></exception>
         public override void Commit()
         {
-            if (connection.State != ConnectionState.Open)
+            if (_connection.State != ConnectionState.Open)
                 throw new JdbcException("Connection must be open commit a transaction.");
 
             try
             {
-                connection.connection.commit();
-                connection.connection.setAutoCommit(true);
+                _connection._connection.commit();
+                _connection._connection.setAutoCommit(true);
             }
             catch (SQLException e)
             {
@@ -86,18 +89,18 @@ namespace IKVM.Jdbc.Data
         }
 
         /// <summary>
-        /// Rollsback the current transaction.
+        /// Rolls back the current transaction.
         /// </summary>
         /// <exception cref="JdbcException"></exception>
         public override void Rollback()
         {
-            if (connection.State != ConnectionState.Open)
+            if (_connection.State != ConnectionState.Open)
                 throw new JdbcException("Connection must be open commit a transaction.");
 
             try
             {
-                connection.connection.rollback();
-                connection.connection.setAutoCommit(true);
+                _connection._connection.rollback();
+                _connection._connection.setAutoCommit(true);
             }
             catch (SQLException e)
             {
@@ -109,17 +112,17 @@ namespace IKVM.Jdbc.Data
         #region SavePoints
 
         /// <inheritdoc />
-        public override bool SupportsSavepoints => connection.connection.getMetaData().supportsSavepoints();
+        public override bool SupportsSavepoints => _connection._connection.getMetaData().supportsSavepoints();
 
         /// <inheritdoc />
         public override void Save(string savepointName)
         {
-            if (connection.State != ConnectionState.Open)
+            if (_connection.State != ConnectionState.Open)
                 throw new JdbcException("Connection must be open commit a transaction.");
 
             try
             {
-                savepoints[savepointName] = connection.connection.setSavepoint(savepointName);
+                _savepoints[savepointName] = _connection._connection.setSavepoint(savepointName);
             }
             catch (SQLException e)
             {
@@ -130,15 +133,15 @@ namespace IKVM.Jdbc.Data
         /// <inheritdoc />
         public override void Rollback(string savepointName)
         {
-            if (connection.State != ConnectionState.Open)
+            if (_connection.State != ConnectionState.Open)
                 throw new JdbcException("Connection must be open commit a transaction.");
 
-            if (savepoints.TryGetValue(savepointName, out var savepoint) == false)
+            if (_savepoints.TryGetValue(savepointName, out var savepoint) == false)
                 throw new JdbcException("Unknown save point name.");
 
             try
             {
-                connection.connection.rollback(savepoint);
+                _connection._connection.rollback(savepoint);
             }
             catch (SQLException e)
             {
@@ -149,15 +152,15 @@ namespace IKVM.Jdbc.Data
         /// <inheritdoc />
         public override void Release(string savepointName)
         {
-            if (connection.State != ConnectionState.Open)
+            if (_connection.State != ConnectionState.Open)
                 throw new JdbcException("Connection must be open commit a transaction.");
 
-            if (savepoints.TryGetValue(savepointName, out var savepoint) == false)
+            if (_savepoints.TryGetValue(savepointName, out var savepoint) == false)
                 throw new JdbcException("Unknown save point name.");
 
             try
             {
-                connection.connection.releaseSavepoint(savepoint);
+                _connection._connection.releaseSavepoint(savepoint);
             }
             catch (SQLException e)
             {
