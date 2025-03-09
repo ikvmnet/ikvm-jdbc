@@ -126,6 +126,116 @@ namespace IKVM.Jdbc.Data.Tests
                 buffer[i].Should().Be((byte)(240 + i));
         }
 
+        [TestMethod]
+        public void CanGetCharsToArray()
+        {
+            using var cnn = CreateTestConnection();
+            cnn.Open();
+
+            using var cmd = cnn.CreateCommand();
+            cmd.CommandText = "drop table if exists CanGetCharsToArray";
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "create table CanGetCharsToArray (id integer, data text)";
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "insert into CanGetCharsToArray values (1, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')";
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "select * from CanGetCharsToArray";
+            using var rdr = cmd.ExecuteReader();
+            rdr.FieldCount.Should().Be(2);
+            rdr.GetName(0).Should().Be("id");
+            rdr.GetName(1).Should().Be("data");
+
+            var buffer = new char[32];
+            rdr.GetChars(1, 0, buffer, 0, buffer.Length).Should().Be(26);
+
+            for (int i = 0; i < 26; i++)
+                buffer[i].Should().Be((char)((byte)'A' + i));
+            for (int i = 26; i < 32; i++)
+                buffer[i].Should().Be((char)0);
+        }
+
+        [TestMethod]
+        public void CanGetCharsToSpan()
+        {
+            using var cnn = CreateTestConnection();
+            cnn.Open();
+
+            using var cmd = cnn.CreateCommand();
+            cmd.CommandText = "drop table if exists CanGetCharsToSpan";
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "create table CanGetCharsToSpan (id integer, data text)";
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "insert into CanGetCharsToSpan values (1, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')";
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "select * from CanGetCharsToSpan";
+            using var rdr = cmd.ExecuteReader();
+            rdr.FieldCount.Should().Be(2);
+            rdr.GetName(0).Should().Be("id");
+            rdr.GetName(1).Should().Be("data");
+
+            var buffer = (Span<char>)stackalloc char[32];
+            rdr.GetChars(1, 0, buffer).Should().Be(26);
+
+            for (int i = 0; i < 26; i++)
+                buffer[i].Should().Be((char)((byte)'A' + i));
+            for (int i = 26; i < 32; i++)
+                buffer[i].Should().Be((char)0);
+        }
+
+        [TestMethod]
+        public void CanGetTextToChars()
+        {
+            using var cnn = CreateTestConnection();
+            cnn.Open();
+
+            using var cmd = cnn.CreateCommand();
+            cmd.CommandText = "drop table if exists CanGetTextToChars";
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "create table CanGetTextToChars (id integer, data text)";
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "insert into CanGetTextToChars values (1, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')";
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "select * from CanGetTextToChars";
+            using var rdr = cmd.ExecuteReader();
+            rdr.FieldCount.Should().Be(2);
+            rdr.GetName(0).Should().Be("id");
+            rdr.GetName(1).Should().Be("data");
+
+            var stm = rdr.GetChars(1);
+            stm.Should().NotBeNull();
+            stm.Length.Should().Be(26);
+
+            for (int i = 0; i < 26; i++)
+                stm[i].Should().Be((char)((byte)'A' + i));
+        }
+
+        [TestMethod]
+        public void CanGetTextToReader()
+        {
+            using var cnn = CreateTestConnection();
+            cnn.Open();
+
+            using var cmd = cnn.CreateCommand();
+            cmd.CommandText = "drop table if exists CanGetTextToReader";
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "create table CanGetTextToReader (id integer, data text)";
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "insert into CanGetTextToReader values (1, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')";
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "select * from CanGetTextToReader";
+            using var rdr = cmd.ExecuteReader();
+            rdr.FieldCount.Should().Be(2);
+            rdr.GetName(0).Should().Be("id");
+            rdr.GetName(1).Should().Be("data");
+
+            using var stm = rdr.GetTextReader(1);
+            var buffer = stm.ReadToEnd();
+            buffer.Length.Should().Be(26);
+
+            for (int i = 0; i < 26; i++)
+                buffer[i].Should().Be((char)((byte)'A' + i));
+        }
+
     }
 
 }

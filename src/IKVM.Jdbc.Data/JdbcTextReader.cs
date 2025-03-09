@@ -71,7 +71,11 @@ namespace IKVM.Jdbc.Data
 
             try
             {
-                return Reader.read(buffer, index, count);
+                var n = Reader.read(buffer, index, count);
+                if (n <= 0)
+                    return 0;
+
+                return n;
             }
             catch (java.io.IOException e)
             {
@@ -90,6 +94,9 @@ namespace IKVM.Jdbc.Data
             try
             {
                 var n = Reader.read(b, 0, l);
+                if (n <= 0)
+                    return 0;
+
                 b.AsSpan().Slice(0, n).CopyTo(buffer);
                 return n;
             }

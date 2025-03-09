@@ -699,6 +699,44 @@ namespace IKVM.Jdbc.Data
         }
 
         /// <summary>
+        /// Gets the value of the specified column ordinal as a char array.
+        /// </summary>
+        /// <param name="ordinal"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        public char[]? GetChars(int ordinal)
+        {
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
+            try
+            {
+                var column = ordinal + 1;
+                switch (_rs.getMetaData().getColumnType(column))
+                {
+                    case Types.CHAR:
+                    case Types.NCHAR:
+                    case Types.VARCHAR:
+                    case Types.NVARCHAR:
+                    case Types.LONGVARCHAR:
+                    case Types.LONGNVARCHAR:
+                    case Types.CLOB:
+                        var b = _rs.getString(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return b.ToCharArray();
+                    default:
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnType(column)} into Byte[].");
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
+        }
+
+        /// <summary>
         /// Reads a stream of characters from the specified column, starting at location indicated by <paramref name="dataOffset"/>, into the
         /// buffer, starting at the location indicated by <paramref name="bufferOffset"/>.
         /// </summary>
@@ -711,10 +749,55 @@ namespace IKVM.Jdbc.Data
         /// <exception cref="JdbcException"></exception>
         public override long GetChars(int ordinal, long dataOffset, char[]? buffer, int bufferOffset, int length)
         {
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (dataOffset < 0)
+                throw new ArgumentOutOfRangeException(nameof(dataOffset));
             if (buffer is null)
                 throw new ArgumentNullException(nameof(buffer));
 
-            return GetChars(ordinal, dataOffset, buffer.AsSpan(bufferOffset, length));
+            try
+            {
+                var column = ordinal + 1;
+                switch (_rs.getMetaData().getColumnType(column))
+                {
+                    case Types.CHAR:
+                    case Types.NCHAR:
+                    case Types.VARCHAR:
+                    case Types.LONGVARCHAR:
+                    case Types.CLOB:
+                        var stream = _rs.getCharacterStream(column);
+                        if (_rs.wasNull())
+                        {
+                            return 0;
+                        }
+                        else
+                        {
+                            // skip until we consume offset bytes
+                            while (dataOffset > 0)
+                                dataOffset -= stream.skip(dataOffset);
+
+                            int n = 0; // total read
+                            int i = 0; // current read
+
+                            // read up to buffer size, from buffer offset, or remaining space available, until end
+                            while ((i = stream.read(buffer, n + bufferOffset, Math.Min(DEFAULT_BUFFER_SIZE, buffer.Length - n))) != -1)
+                                n += i;
+
+                            return n;
+                        }
+                    default:
+                        throw new JdbcException($"Could not retrieve chars.");
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
+            catch (java.io.IOException e)
+            {
+                throw new System.IO.IOException(e.getMessage(), e);
+            }
         }
 
         /// <summary>
@@ -727,32 +810,65 @@ namespace IKVM.Jdbc.Data
         /// <returns></returns>
         public long GetChars(int ordinal, long dataOffset, Span<char> buffer)
         {
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (dataOffset < 0)
+                throw new ArgumentOutOfRangeException(nameof(dataOffset));
+
             try
             {
-                var v = GetValue(ordinal);
-                switch (v)
+                var column = ordinal + 1;
+                switch (_rs.getMetaData().getColumnType(column))
                 {
-                    case null:
-                    case DBNull:
-                        throw new JdbcException("Could not write null value to string.");
-                    case string s:
-                        var _1 = s.AsSpan().Slice((int)dataOffset);
-                        _1.CopyTo(buffer);
-                        return Math.Min(_1.Length, buffer.Length);
-                    case char[] c:
-                        var _2 = c.AsSpan().Slice((int)dataOffset);
-                        _2.CopyTo(buffer);
-                        return Math.Min(_2.Length, buffer.Length);
-                    case NClob n:
-                    case Clob c:
-                        throw new NotImplementedException($"Could not convert (n)clob into string.");
+                    case Types.CHAR:
+                    case Types.NCHAR:
+                    case Types.VARCHAR:
+                    case Types.LONGVARCHAR:
+                    case Types.CLOB:
+                        var stream = _rs.getCharacterStream(column);
+                        if (_rs.wasNull())
+                        {
+                            return 0;
+                        }
+                        else
+                        {
+                            // skip until we consume offset bytes
+                            while (dataOffset > 0)
+                                dataOffset -= stream.skip(dataOffset);
+
+                            var b = ArrayPool<char>.Shared.Rent(DEFAULT_BUFFER_SIZE);
+
+                            try
+                            {
+                                int n = 0; // total read
+                                int i = 0; // current read
+
+                                // read up to buffer size, or remaining space available, until end
+                                while ((i = stream.read(b, 0, Math.Min(DEFAULT_BUFFER_SIZE, buffer.Length - n))) != -1)
+                                {
+                                    b.AsSpan().Slice(0, i).CopyTo(buffer.Slice(n));
+                                    n += i;
+                                }
+
+                                return n;
+                            }
+                            finally
+                            {
+                                if (b is not null)
+                                    ArrayPool<char>.Shared.Return(b);
+                            }
+                        }
                     default:
-                        throw new JdbcException($"Could not convert {v.GetType()} into string.");
+                        throw new JdbcException($"Could not retrieve bytes.");
                 }
             }
             catch (SQLException e)
             {
                 throw new JdbcException(e);
+            }
+            catch (java.io.IOException e)
+            {
+                throw new System.IO.IOException(e.getMessage(), e);
             }
         }
 
