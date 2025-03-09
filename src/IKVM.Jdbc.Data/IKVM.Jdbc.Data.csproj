@@ -2,7 +2,12 @@
 
     <PropertyGroup>
         <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
+    
+    <ItemGroup>
+        <InternalsVisibleTo Include="IKVM.Jdbc.Data.Tests" />
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="IKVM" Version="8.11.1" />

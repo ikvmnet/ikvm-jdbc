@@ -1,7 +1,12 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections;
 using System.Data.Common;
+using System.Data.SqlTypes;
+using System.IO;
 using System.Xml.Linq;
+
+using IKVM.Jdbc.Data.Internal;
 
 using java.sql;
 
@@ -13,6 +18,8 @@ namespace IKVM.Jdbc.Data
     /// </summary>
     public abstract class JdbcDataReaderBase : DbDataReader
     {
+
+        const int DEFAULT_BUFFER_SIZE = 1024;
 
         ResultSet _rs;
         int _recordsAffected;
@@ -90,52 +97,57 @@ namespace IKVM.Jdbc.Data
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
 
-            // java starts at 1
-            ordinal++;
-            var type = (JDBCType.__Enum)_rs.getMetaData().getColumnType(ordinal);
-            return type switch
+            try
             {
-                JDBCType.__Enum.ARRAY => typeof(System.Array),
-                JDBCType.__Enum.BIGINT => typeof(long),
-                JDBCType.__Enum.BINARY => typeof(byte[]),
-                JDBCType.__Enum.BIT => typeof(bool),
-                JDBCType.__Enum.BLOB => typeof(byte[]),
-                JDBCType.__Enum.BOOLEAN => typeof(bool),
-                JDBCType.__Enum.CHAR => typeof(string),
-                JDBCType.__Enum.CLOB => typeof(string),
-                JDBCType.__Enum.DATALINK => throw new NotSupportedException(),
-                JDBCType.__Enum.DATE => typeof(DateTime),
-                JDBCType.__Enum.DECIMAL => typeof(decimal),
-                JDBCType.__Enum.DISTINCT => throw new NotImplementedException(),
-                JDBCType.__Enum.DOUBLE => typeof(double),
-                JDBCType.__Enum.FLOAT => typeof(float),
-                JDBCType.__Enum.INTEGER => typeof(int),
-                JDBCType.__Enum.JAVA_OBJECT => typeof(object),
-                JDBCType.__Enum.LONGNVARCHAR => typeof(string),
-                JDBCType.__Enum.LONGVARBINARY => typeof(byte[]),
-                JDBCType.__Enum.LONGVARCHAR => typeof(string),
-                JDBCType.__Enum.NCHAR => typeof(string),
-                JDBCType.__Enum.NCLOB => typeof(string),
-                JDBCType.__Enum.NULL => typeof(object),
-                JDBCType.__Enum.NUMERIC => throw new NotImplementedException(),
-                JDBCType.__Enum.NVARCHAR => typeof(string),
-                JDBCType.__Enum.OTHER => throw new NotSupportedException(),
-                JDBCType.__Enum.REAL => typeof(float),
-                JDBCType.__Enum.REF => throw new NotSupportedException(),
-                JDBCType.__Enum.REF_CURSOR => throw new NotSupportedException(),
-                JDBCType.__Enum.ROWID => throw new NotImplementedException(),
-                JDBCType.__Enum.SMALLINT => typeof(short),
-                JDBCType.__Enum.SQLXML => typeof(XDocument),
-                JDBCType.__Enum.STRUCT => throw new NotSupportedException(),
-                JDBCType.__Enum.TIME => typeof(TimeSpan),
-                JDBCType.__Enum.TIMESTAMP => typeof(DateTime),
-                JDBCType.__Enum.TIMESTAMP_WITH_TIMEZONE => typeof(DateTimeOffset),
-                JDBCType.__Enum.TIME_WITH_TIMEZONE => typeof(DateTimeOffset),
-                JDBCType.__Enum.TINYINT => typeof(byte),
-                JDBCType.__Enum.VARBINARY => typeof(byte[]),
-                JDBCType.__Enum.VARCHAR => typeof(string),
-                _ => throw new NotSupportedException(),
-            };
+                var column = ordinal + 1;
+                return _rs.getMetaData().getColumnType(column) switch
+                {
+                    Types.ARRAY => typeof(System.Array),
+                    Types.BIGINT => typeof(long),
+                    Types.BINARY => typeof(byte[]),
+                    Types.BIT => typeof(bool),
+                    Types.BLOB => typeof(byte[]),
+                    Types.BOOLEAN => typeof(bool),
+                    Types.CHAR => typeof(string),
+                    Types.CLOB => typeof(string),
+                    Types.DATALINK => throw new NotSupportedException(),
+                    Types.DATE => typeof(DateTime),
+                    Types.DECIMAL => typeof(decimal),
+                    Types.DISTINCT => throw new NotImplementedException(),
+                    Types.DOUBLE => typeof(double),
+                    Types.FLOAT => typeof(float),
+                    Types.INTEGER => typeof(int),
+                    Types.JAVA_OBJECT => typeof(object),
+                    Types.LONGNVARCHAR => typeof(string),
+                    Types.LONGVARBINARY => typeof(byte[]),
+                    Types.LONGVARCHAR => typeof(string),
+                    Types.NCHAR => typeof(string),
+                    Types.NCLOB => typeof(string),
+                    Types.NULL => typeof(object),
+                    Types.NUMERIC => throw new NotImplementedException(),
+                    Types.NVARCHAR => typeof(string),
+                    Types.OTHER => throw new NotSupportedException(),
+                    Types.REAL => typeof(float),
+                    Types.REF => throw new NotSupportedException(),
+                    Types.REF_CURSOR => throw new NotSupportedException(),
+                    Types.ROWID => throw new NotImplementedException(),
+                    Types.SMALLINT => typeof(short),
+                    Types.SQLXML => typeof(XDocument),
+                    Types.STRUCT => throw new NotSupportedException(),
+                    Types.TIME => typeof(TimeSpan),
+                    Types.TIMESTAMP => typeof(DateTime),
+                    Types.TIMESTAMP_WITH_TIMEZONE => typeof(DateTimeOffset),
+                    Types.TIME_WITH_TIMEZONE => typeof(DateTimeOffset),
+                    Types.TINYINT => typeof(byte),
+                    Types.VARBINARY => typeof(byte[]),
+                    Types.VARCHAR => typeof(string),
+                    _ => throw new NotSupportedException(),
+                };
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
         }
 
         /// <summary>
@@ -148,9 +160,15 @@ namespace IKVM.Jdbc.Data
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
 
-            // java starts at 1
-            ordinal++;
-            return _rs.getMetaData().getColumnTypeName(ordinal);
+            try
+            {
+                var column = ordinal + 1;
+                return _rs.getMetaData().getColumnTypeName(column);
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
         }
 
         /// <summary>
@@ -163,9 +181,15 @@ namespace IKVM.Jdbc.Data
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
 
-            // java starts at 1
-            ordinal++;
-            return _rs.getMetaData().getColumnName(ordinal);
+            try
+            {
+                var column = ordinal + 1;
+                return _rs.getMetaData().getColumnName(column);
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
         }
 
         /// <summary>
@@ -178,13 +202,20 @@ namespace IKVM.Jdbc.Data
             if (name is null)
                 throw new ArgumentNullException(nameof(name));
 
-            return _rs.findColumn(name) is int i && i > 0 ? i - 1 : -1;
+            try
+            {
+                return _rs.findColumn(name) is int i && i > 0 ? i - 1 : -1;
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
         }
 
         /// <summary>
         /// Gets the value of the specified column as an instance of <see cref="object"/>.
         /// </summary>
-        /// <param name="ordinal"></param>
+        /// <param name="column"></param>
         /// <returns></returns>
         /// <exception cref="NotSupportedException"></exception>
         public override object GetValue(int ordinal)
@@ -192,182 +223,126 @@ namespace IKVM.Jdbc.Data
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
 
-            // java starts at 1
-            ordinal++;
-            var type = (JDBCType.__Enum)_rs.getMetaData().getColumnType(ordinal);
-
-            switch (type)
+            try
             {
-                case JDBCType.__Enum.ARRAY:
-                    {
-                        var v = _rs.getArray(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : v.getArray();
-                    }
-                case JDBCType.__Enum.BIGINT:
-                    {
-                        var v = _rs.getLong(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : v;
-                    }
-                case JDBCType.__Enum.BINARY:
-                    {
-                        var v = _rs.getBytes(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : v;
-                    }
-                case JDBCType.__Enum.BIT:
-                    {
-                        var v = _rs.getBoolean(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : v;
-                    }
-                case JDBCType.__Enum.BLOB:
-                    {
-                        var v = _rs.getBlob(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : v;
-                    }
-                case JDBCType.__Enum.BOOLEAN:
-                    {
-                        var v = _rs.getBoolean(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : v;
-                    }
-                case JDBCType.__Enum.CHAR:
-                    {
-                        var v = _rs.getString(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : v;
-                    }
-                case JDBCType.__Enum.CLOB:
-                    {
-                        var v = _rs.getClob(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : v;
-                    }
-                case JDBCType.__Enum.DATALINK:
-                    throw new NotSupportedException();
-                case JDBCType.__Enum.DATE:
-                    {
-                        var v = _rs.getDate(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(v.getTime()).UtcDateTime;
-                    }
-                case JDBCType.__Enum.DECIMAL:
-                    {
-                        var v = _rs.getBigDecimal(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : decimal.Parse(v.toString());
-                    }
-                case JDBCType.__Enum.DISTINCT:
-                    throw new NotImplementedException();
-                case JDBCType.__Enum.DOUBLE:
-                    {
-                        var v = _rs.getDouble(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : v;
-                    }
-                case JDBCType.__Enum.FLOAT:
-                    {
-                        var v = _rs.getFloat(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : v;
-                    }
-                case JDBCType.__Enum.INTEGER:
-                    {
-                        var v = _rs.getInt(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : v;
-                    }
-                case JDBCType.__Enum.JAVA_OBJECT:
-                    {
-                        var v = _rs.getObject(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : v;
-                    }
-                case JDBCType.__Enum.LONGNVARCHAR:
-                    {
-                        var v = _rs.getNString(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : v;
-                    }
-                case JDBCType.__Enum.LONGVARBINARY:
-                    {
-                        var v = _rs.getBytes(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : v;
-                    }
-                case JDBCType.__Enum.LONGVARCHAR:
-                    {
-                        var v = _rs.getString(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : v;
-                    }
-                case JDBCType.__Enum.NCHAR:
-                    {
-                        var v = _rs.getNString(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : v;
-                    }
-                case JDBCType.__Enum.NCLOB:
-                    {
-                        var v = _rs.getNClob(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : v;
-                    }
-                case JDBCType.__Enum.NULL:
-                    return DBNull.Value;
-                case JDBCType.__Enum.NUMERIC:
-                    throw new NotImplementedException();
-                case JDBCType.__Enum.NVARCHAR:
-                    {
-                        var v = _rs.getNString(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : v;
-                    }
-                case JDBCType.__Enum.OTHER:
-                    throw new NotSupportedException();
-                case JDBCType.__Enum.REAL:
-                    {
-                        var v = _rs.getFloat(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : v;
-                    }
-                case JDBCType.__Enum.REF:
-                    throw new NotSupportedException();
-                case JDBCType.__Enum.REF_CURSOR:
-                    throw new NotSupportedException();
-                case JDBCType.__Enum.ROWID:
-                    throw new NotImplementedException();
-                case JDBCType.__Enum.SMALLINT:
-                    {
-                        var v = _rs.getShort(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : v;
-                    }
-                case JDBCType.__Enum.SQLXML:
-                    {
-                        var v = _rs.getSQLXML(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : v;
-                    }
-                case JDBCType.__Enum.STRUCT:
-                    throw new NotSupportedException();
-                case JDBCType.__Enum.TIME:
-                    {
-                        var v = _rs.getTime(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : TimeSpan.FromMilliseconds(v.getTime());
-                    }
-                case JDBCType.__Enum.TIMESTAMP:
-                    {
-                        var v = _rs.getTime(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(v.getTime()).UtcDateTime;
-                    }
-                case JDBCType.__Enum.TIMESTAMP_WITH_TIMEZONE:
-                    {
-                        var v = _rs.getTime(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(v.getTime());
-                    }
-                case JDBCType.__Enum.TIME_WITH_TIMEZONE:
-                    {
-                        var v = _rs.getTime(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(v.getTime());
-                    }
-                case JDBCType.__Enum.TINYINT:
-                    {
-                        var v = _rs.getByte(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : v;
-                    }
-                case JDBCType.__Enum.VARBINARY:
-                    {
-                        var v = _rs.getBytes(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : v;
-                    }
-                case JDBCType.__Enum.VARCHAR:
-                    {
-                        var v = _rs.getString(ordinal);
-                        return _rs.wasNull() ? DBNull.Value : v;
-                    }
-                default:
-                    throw new NotSupportedException();
+                var column = ordinal + 1;
+                switch (_rs.getMetaData().getColumnType(column))
+                {
+                    case Types.ARRAY:
+                        var array_ = _rs.getArray(column);
+                        return _rs.wasNull() ? DBNull.Value : array_.getArray();
+                    case Types.BIGINT:
+                        var long_ = _rs.getLong(column);
+                        return _rs.wasNull() ? DBNull.Value : long_;
+                    case Types.BINARY:
+                        var binary_ = _rs.getBytes(column);
+                        return _rs.wasNull() ? DBNull.Value : binary_;
+                    case Types.BIT:
+                        var bit_ = _rs.getBoolean(column);
+                        return _rs.wasNull() ? DBNull.Value : bit_;
+                    case Types.BLOB:
+                        var blob_ = _rs.getBytes(column);
+                        return _rs.wasNull() ? DBNull.Value : blob_;
+                    case Types.BOOLEAN:
+                        var bool_ = _rs.getBoolean(column);
+                        return _rs.wasNull() ? DBNull.Value : bool_;
+                    case Types.CHAR:
+                        var char_ = _rs.getString(column);
+                        return _rs.wasNull() ? DBNull.Value : char_;
+                    case Types.CLOB:
+                        var clob_ = _rs.getString(column);
+                        return _rs.wasNull() ? DBNull.Value : clob_;
+                    case Types.DATALINK:
+                        throw new NotSupportedException();
+                    case Types.DATE:
+                        var date_ = _rs.getDate(column);
+                        return _rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(date_.getTime()).UtcDateTime;
+                    case Types.DECIMAL:
+                        var decimal_ = _rs.getBigDecimal(column);
+                        return _rs.wasNull() ? DBNull.Value : decimal.Parse(decimal_.toString());
+                    case Types.DISTINCT:
+                        throw new NotImplementedException();
+                    case Types.DOUBLE:
+                        var double_ = _rs.getDouble(column);
+                        return _rs.wasNull() ? DBNull.Value : double_;
+                    case Types.FLOAT:
+                        var float_ = _rs.getFloat(column);
+                        return _rs.wasNull() ? DBNull.Value : float_;
+                    case Types.INTEGER:
+                        var integer_ = _rs.getInt(column);
+                        return _rs.wasNull() ? DBNull.Value : integer_;
+                    case Types.JAVA_OBJECT:
+                        var object_ = _rs.getObject(column);
+                        return _rs.wasNull() ? DBNull.Value : object_;
+                    case Types.LONGNVARCHAR:
+                        var longnvarchar_ = _rs.getString(column);
+                        return _rs.wasNull() ? DBNull.Value : longnvarchar_;
+                    case Types.LONGVARBINARY:
+                        var longvarbinary_ = _rs.getBytes(column);
+                        return _rs.wasNull() ? DBNull.Value : longvarbinary_;
+                    case Types.LONGVARCHAR:
+                        var longvarchar_ = _rs.getString(column);
+                        return _rs.wasNull() ? DBNull.Value : longvarchar_;
+                    case Types.NCHAR:
+                        var nchar_ = _rs.getString(column);
+                        return _rs.wasNull() ? DBNull.Value : nchar_;
+                    case Types.NCLOB:
+                        var nclob_ = _rs.getString(column);
+                        return _rs.wasNull() ? DBNull.Value : nclob_;
+                    case Types.NULL:
+                        return DBNull.Value;
+                    case Types.NUMERIC:
+                        throw new NotImplementedException();
+                    case Types.NVARCHAR:
+                        var nvarchar_ = _rs.getString(column);
+                        return _rs.wasNull() ? DBNull.Value : nvarchar_;
+                    case Types.OTHER:
+                        throw new NotSupportedException();
+                    case Types.REAL:
+                        var real_ = _rs.getFloat(column);
+                        return _rs.wasNull() ? DBNull.Value : real_;
+                    case Types.REF:
+                        throw new NotSupportedException();
+                    case Types.REF_CURSOR:
+                        throw new NotSupportedException();
+                    case Types.ROWID:
+                        throw new NotImplementedException();
+                    case Types.SMALLINT:
+                        var smallint_ = _rs.getShort(column);
+                        return _rs.wasNull() ? DBNull.Value : smallint_;
+                    case Types.SQLXML:
+                        var sqlxml_ = _rs.getSQLXML(column);
+                        return _rs.wasNull() ? DBNull.Value : XDocument.Parse(sqlxml_.getString());
+                    case Types.STRUCT:
+                        throw new NotSupportedException();
+                    case Types.TIME:
+                        var time_ = _rs.getTime(column);
+                        return _rs.wasNull() ? DBNull.Value : TimeSpan.FromMilliseconds(time_.getTime());
+                    case Types.TIMESTAMP:
+                        var timestamp_ = _rs.getTime(column);
+                        return _rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(timestamp_.getTime()).UtcDateTime;
+                    case Types.TIMESTAMP_WITH_TIMEZONE:
+                        var timestampwithtimezone_ = _rs.getTime(column);
+                        return _rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(timestampwithtimezone_.getTime());
+                    case Types.TIME_WITH_TIMEZONE:
+                        var timewithtimezone_ = _rs.getTime(column);
+                        return _rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(timewithtimezone_.getTime());
+                    case Types.TINYINT:
+                        var tinyint_ = _rs.getByte(column);
+                        return _rs.wasNull() ? DBNull.Value : tinyint_;
+                    case Types.VARBINARY:
+                        var varbinary_ = _rs.getBytes(column);
+                        return _rs.wasNull() ? DBNull.Value : varbinary_;
+                    case Types.VARCHAR:
+                        var varchar_ = _rs.getString(column);
+                        return _rs.wasNull() ? DBNull.Value : varchar_;
+                    default:
+                        throw new NotSupportedException();
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
             }
         }
 
@@ -381,11 +356,18 @@ namespace IKVM.Jdbc.Data
             if (values is null)
                 throw new ArgumentNullException(nameof(values));
 
-            var n = _rs.getMetaData().getColumnCount();
-            for (int i = 0; i < n; i++)
-                values[i] = GetValue(i);
+            try
+            {
+                var n = _rs.getMetaData().getColumnCount();
+                for (int i = 0; i < n; i++)
+                    values[i] = GetValue(i);
 
-            return n;
+                return n;
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
         }
 
         /// <summary>
@@ -395,8 +377,15 @@ namespace IKVM.Jdbc.Data
         /// <returns></returns>
         public override bool IsDBNull(int ordinal)
         {
-            GetValue(ordinal);
-            return _rs.wasNull();
+            try
+            {
+                GetValue(ordinal);
+                return _rs.wasNull();
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
         }
 
         /// <summary>
@@ -406,7 +395,58 @@ namespace IKVM.Jdbc.Data
         /// <returns></returns>
         public override bool GetBoolean(int ordinal)
         {
-            return (bool)GetValue(ordinal);
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
+            try
+            {
+                var column = ordinal + 1;
+                switch (_rs.getMetaData().getColumnType(column))
+                {
+                    case Types.BOOLEAN:
+                        var bool_ = _rs.getBoolean(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return bool_;
+                    case Types.BIT:
+                        var bit_ = _rs.getBoolean(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return bit_;
+                    case Types.TINYINT:
+                        var byte_ = _rs.getByte(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return byte_ != 0;
+                    case Types.SMALLINT:
+                        var short_ = _rs.getShort(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return short_ != 0;
+                    case Types.INTEGER:
+                        var int_ = _rs.getInt(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return int_ != 0;
+                    case Types.BIGINT:
+                        var long_ = _rs.getLong(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return long_ != 0;
+                    default:
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnType(column)} into Boolean.");
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
         }
 
         /// <summary>
@@ -416,7 +456,75 @@ namespace IKVM.Jdbc.Data
         /// <returns></returns>
         public override byte GetByte(int ordinal)
         {
-            return (byte)GetValue(ordinal);
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
+            try
+            {
+                var column = ordinal + 1;
+                switch (_rs.getMetaData().getColumnType(column))
+                {
+                    case Types.BOOLEAN:
+                        var bool_ = _rs.getBoolean(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return bool_ ? (byte)1 : (byte)0;
+                    case Types.BIT:
+                        var bit_ = _rs.getBoolean(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return bit_ ? (byte)1 : (byte)0;
+                    case Types.TINYINT:
+                        var byte_ = _rs.getByte(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return byte_;
+                    default:
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnType(column)} into Byte.");
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
+        }
+
+        /// <summary>
+        /// Gets the value of the specified column ordinal as a byte array.
+        /// </summary>
+        /// <param name="ordinal"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        public byte[]? GetBytes(int ordinal)
+        {
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
+            try
+            {
+                var column = ordinal + 1;
+                switch (_rs.getMetaData().getColumnType(column))
+                {
+                    case Types.BINARY:
+                    case Types.VARBINARY:
+                    case Types.LONGVARBINARY:
+                    case Types.BLOB:
+                        var b = _rs.getBytes(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return b;
+                    default:
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnType(column)} into Byte[].");
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
         }
 
         /// <summary>
@@ -430,9 +538,56 @@ namespace IKVM.Jdbc.Data
         /// <param name="length"></param>
         /// <returns></returns>
         /// <exception cref="JdbcException"></exception>
-        public override long GetBytes(int ordinal, long dataOffset, byte[] buffer, int bufferOffset, int length)
+        public override long GetBytes(int ordinal, long dataOffset, byte[]? buffer, int bufferOffset, int length)
         {
-            return GetBytes(ordinal, dataOffset, buffer.AsSpan().Slice(bufferOffset, length));
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (dataOffset < 0)
+                throw new ArgumentOutOfRangeException(nameof(dataOffset));
+            if (buffer is null)
+                throw new ArgumentNullException(nameof(buffer));
+
+            try
+            {
+                var column = ordinal + 1;
+                switch (_rs.getMetaData().getColumnType(column))
+                {
+                    case Types.BINARY:
+                    case Types.VARBINARY:
+                    case Types.LONGVARBINARY:
+                    case Types.BLOB:
+                        var stream = _rs.getBinaryStream(column);
+                        if (_rs.wasNull())
+                        {
+                            return 0;
+                        }
+                        else
+                        {
+                            // skip until we consume offset bytes
+                            while (dataOffset > 0)
+                                dataOffset -= stream.skip(dataOffset);
+
+                            int n = 0; // total read
+                            int i = 0; // current read
+
+                            // read up to buffer size, from buffer offset, or remaining space available, until end
+                            while ((i = stream.read(buffer, n + bufferOffset, Math.Min(DEFAULT_BUFFER_SIZE, buffer.Length - n))) != -1)
+                                n += i;
+
+                            return n;
+                        }
+                    default:
+                        throw new JdbcException($"Could not retrieve bytes.");
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
+            catch (java.io.IOException e)
+            {
+                throw new System.IO.IOException(e.getMessage(), e);
+            }
         }
 
         /// <summary>
@@ -445,20 +600,64 @@ namespace IKVM.Jdbc.Data
         /// <returns></returns>
         public long GetBytes(int ordinal, long dataOffset, Span<byte> buffer)
         {
-            var v = GetValue(ordinal);
-            switch (v)
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (dataOffset < 0)
+                throw new ArgumentOutOfRangeException(nameof(dataOffset));
+
+            try
             {
-                case null:
-                case DBNull:
-                    throw new JdbcException("Could not write null value to bytes.");
-                case byte[] c:
-                    var _2 = c.AsSpan().Slice((int)dataOffset);
-                    _2.CopyTo(buffer);
-                    return Math.Min(_2.Length, buffer.Length);
-                case Blob n:
-                    throw new NotImplementedException($"Could not convert blob into bytes.");
-                default:
-                    throw new JdbcException($"Could not convert {v.GetType()} into bytes.");
+                var column = ordinal + 1;
+                switch (_rs.getMetaData().getColumnType(column))
+                {
+                    case Types.BINARY:
+                    case Types.VARBINARY:
+                    case Types.LONGVARBINARY:
+                    case Types.BLOB:
+                        var stream = _rs.getBinaryStream(column);
+                        if (_rs.wasNull())
+                        {
+                            return 0;
+                        }
+                        else
+                        {
+                            // skip until we consume offset bytes
+                            while (dataOffset > 0)
+                                dataOffset -= stream.skip(dataOffset);
+
+                            var b = ArrayPool<byte>.Shared.Rent(DEFAULT_BUFFER_SIZE);
+
+                            try
+                            {
+                                int n = 0; // total read
+                                int i = 0; // current read
+
+                                // read up to buffer size, or remaining space available, until end
+                                while ((i = stream.read(b, 0, Math.Min(DEFAULT_BUFFER_SIZE, buffer.Length - n))) != -1)
+                                {
+                                    b.AsSpan().Slice(0, i).CopyTo(buffer.Slice(n));
+                                    n += i;
+                                }
+
+                                return n;
+                            }
+                            finally
+                            {
+                                if (b is not null)
+                                    ArrayPool<byte>.Shared.Return(b);
+                            }
+                        }
+                    default:
+                        throw new JdbcException($"Could not retrieve bytes.");
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
+            catch (java.io.IOException e)
+            {
+                throw new System.IO.IOException(e.getMessage(), e);
             }
         }
 
@@ -469,7 +668,34 @@ namespace IKVM.Jdbc.Data
         /// <returns></returns>
         public override char GetChar(int ordinal)
         {
-            return (char)GetValue(ordinal);
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
+            try
+            {
+                var column = ordinal + 1;
+                switch (_rs.getMetaData().getColumnType(column))
+                {
+                    case Types.CHAR:
+                        var char_ = _rs.getByte(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return (char)char_;
+                    case Types.NCHAR:
+                        var nchar_ = _rs.getByte(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return (char)nchar_;
+                    default:
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnType(column)} into Char.");
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
         }
 
         /// <summary>
@@ -483,8 +709,11 @@ namespace IKVM.Jdbc.Data
         /// <param name="length"></param>
         /// <returns></returns>
         /// <exception cref="JdbcException"></exception>
-        public override long GetChars(int ordinal, long dataOffset, char[] buffer, int bufferOffset, int length)
+        public override long GetChars(int ordinal, long dataOffset, char[]? buffer, int bufferOffset, int length)
         {
+            if (buffer is null)
+                throw new ArgumentNullException(nameof(buffer));
+
             return GetChars(ordinal, dataOffset, buffer.AsSpan(bufferOffset, length));
         }
 
@@ -498,163 +727,409 @@ namespace IKVM.Jdbc.Data
         /// <returns></returns>
         public long GetChars(int ordinal, long dataOffset, Span<char> buffer)
         {
-            var v = GetValue(ordinal);
-            switch (v)
+            try
             {
-                case null:
-                case DBNull:
-                    throw new JdbcException("Could not write null value to string.");
-                case string s:
-                    var _1 = s.AsSpan().Slice((int)dataOffset);
-                    _1.CopyTo(buffer);
-                    return Math.Min(_1.Length, buffer.Length);
-                case char[] c:
-                    var _2 = c.AsSpan().Slice((int)dataOffset);
-                    _2.CopyTo(buffer);
-                    return Math.Min(_2.Length, buffer.Length);
-                case NClob n:
-                case Clob c:
-                    throw new NotImplementedException($"Could not convert (n)clob into string.");
-                default:
-                    throw new JdbcException($"Could not convert {v.GetType()} into string.");
+                var v = GetValue(ordinal);
+                switch (v)
+                {
+                    case null:
+                    case DBNull:
+                        throw new JdbcException("Could not write null value to string.");
+                    case string s:
+                        var _1 = s.AsSpan().Slice((int)dataOffset);
+                        _1.CopyTo(buffer);
+                        return Math.Min(_1.Length, buffer.Length);
+                    case char[] c:
+                        var _2 = c.AsSpan().Slice((int)dataOffset);
+                        _2.CopyTo(buffer);
+                        return Math.Min(_2.Length, buffer.Length);
+                    case NClob n:
+                    case Clob c:
+                        throw new NotImplementedException($"Could not convert (n)clob into string.");
+                    default:
+                        throw new JdbcException($"Could not convert {v.GetType()} into string.");
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
             }
         }
 
-        /// <summary>
-        /// Gets the value of the specified column as a <see cref="DateTime"/> object.
-        /// </summary>
-        /// <param name="ordinal"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public override DateTime GetDateTime(int ordinal)
         {
             return (DateTime)GetValue(ordinal);
         }
 
-        /// <summary>
-        /// Gets the value of the specified column as a <see cref="decimal"/> object.
-        /// </summary>
-        /// <param name="ordinal"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public override decimal GetDecimal(int ordinal)
         {
-            return (decimal)GetValue(ordinal);
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
+            try
+            {
+                var column = ordinal + 1;
+                switch (_rs.getMetaData().getColumnType(column))
+                {
+                    case Types.DECIMAL:
+                        var decimal_ = _rs.getBigDecimal(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return decimal.Parse(decimal_.ToString());
+                    case Types.DOUBLE:
+                        var double_ = _rs.getDouble(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return (decimal)double_;
+                    case Types.FLOAT:
+                        var float_ = _rs.getFloat(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return (decimal)float_;
+                    default:
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnType(column)} into Decimal.");
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
         }
 
-        /// <summary>
-        /// Gets the value of the specified column as a <see cref="double"/> object.
-        /// </summary>
-        /// <param name="ordinal"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public override double GetDouble(int ordinal)
         {
-            return (double)GetValue(ordinal);
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
+            try
+            {
+                var column = ordinal + 1;
+                switch (_rs.getMetaData().getColumnType(column))
+                {
+                    case Types.DOUBLE:
+                        var double_ = _rs.getDouble(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return double_;
+                    case Types.FLOAT:
+                        var float_ = _rs.getFloat(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return float_;
+                    default:
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnType(column)} into Double.");
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
         }
 
-        /// <summary>
-        /// Gets the value of the specified column as a <see cref="float"/> object.
-        /// </summary>
-        /// <param name="ordinal"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public override float GetFloat(int ordinal)
         {
-            return (float)GetValue(ordinal);
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
+            try
+            {
+                var column = ordinal + 1;
+                switch (_rs.getMetaData().getColumnType(column))
+                {
+                    case Types.FLOAT:
+                        var float_ = _rs.getFloat(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return float_;
+                    default:
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnType(column)} into Single.");
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
         }
 
-        /// <summary>
-        /// Gets the value of the specified column as a <see cref="Guid"/> object.
-        /// </summary>
-        /// <param name="ordinal"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public override Guid GetGuid(int ordinal)
         {
             return Guid.Parse((string)GetValue(ordinal));
         }
 
-        /// <summary>
-        /// Gets the value of the specified column as a <see cref="short"/> object.
-        /// </summary>
-        /// <param name="ordinal"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public override short GetInt16(int ordinal)
         {
-            return (short)GetValue(ordinal);
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
+            try
+            {
+                var column = ordinal + 1;
+                switch (_rs.getMetaData().getColumnType(column))
+                {
+                    case Types.SMALLINT:
+                        var short_ = _rs.getShort(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return short_;
+                    case Types.TINYINT:
+                        var byte_ = _rs.getByte(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return byte_;
+                    default:
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnType(column)} into Int16.");
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
         }
 
-        /// <summary>
-        /// Gets the value of the specified column as a <see cref="int"/> object.
-        /// </summary>
-        /// <param name="ordinal"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public override int GetInt32(int ordinal)
         {
-            return (int)GetValue(ordinal);
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
+            try
+            {
+                var column = ordinal + 1;
+                switch (_rs.getMetaData().getColumnType(column))
+                {
+                    case Types.INTEGER:
+                        var int_ = _rs.getInt(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return int_;
+                    case Types.SMALLINT:
+                        var short_ = _rs.getShort(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return short_;
+                    case Types.TINYINT:
+                        var byte_ = _rs.getByte(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return byte_;
+                    default:
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnType(column)} into Int32.");
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
         }
 
-        /// <summary>
-        /// Gets the value of the specified column as a <see cref="long"/> object.
-        /// </summary>
-        /// <param name="ordinal"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public override long GetInt64(int ordinal)
         {
-            return (long)GetValue(ordinal);
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
+            try
+            {
+                var column = ordinal + 1;
+                switch (_rs.getMetaData().getColumnType(column))
+                {
+                    case Types.BIGINT:
+                        var long_ = _rs.getLong(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return long_;
+                    case Types.INTEGER:
+                        var int_ = _rs.getInt(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return int_;
+                    case Types.SMALLINT:
+                        var short_ = _rs.getShort(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return short_;
+                    case Types.TINYINT:
+                        var byte_ = _rs.getByte(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return byte_;
+                    default:
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnType(column)} into Int64.");
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
         }
 
-        /// <summary>
-        /// Gets the value of the specified column as a <see cref="string"/> object.
-        /// </summary>
-        /// <param name="ordinal"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public override string GetString(int ordinal)
         {
-            var v = GetValue(ordinal);
-            return v switch
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
+            try
             {
-                string s => s,
-                NClob nclob => throw new NotImplementedException(),
-                Clob clob => throw new NotImplementedException(),
-                _ => throw new JdbcException($"Could not convert {v.GetType()} into string."),
-            };
+                var column = ordinal + 1;
+                switch (_rs.getMetaData().getColumnType(column))
+                {
+                    case Types.CHAR:
+                    case Types.NCHAR:
+                        var char_ = (char)_rs.getByte(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return char_.ToString();
+                    case Types.VARCHAR:
+                    case Types.NVARCHAR:
+                    case Types.LONGVARCHAR:
+                    case Types.LONGNVARCHAR:
+                    case Types.CLOB:
+                    case Types.NCLOB:
+                        var string_ = _rs.getString(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return string_;
+                    default:
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnType(column)} into String.");
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
         }
 
-        /// <summary>
-        /// Advances the reader to the next record in the result set.
-        /// </summary>
-        /// <returns></returns>
+        /// <inheritdoc />
+        public override Stream GetStream(int ordinal)
+        {
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
+            try
+            {
+                var column = ordinal + 1;
+                switch (_rs.getMetaData().getColumnType(column))
+                {
+                    case Types.BINARY:
+                    case Types.VARBINARY:
+                    case Types.LONGVARBINARY:
+                    case Types.BLOB:
+                        var binaryStream = _rs.getBinaryStream(column);
+                        return _rs.wasNull() ? Stream.Null : new JdbcInputStream(binaryStream, binaryStream.available());
+                    default:
+                        return base.GetStream(ordinal);
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
+        }
+
+        /// <inheritdoc />
+        public override TextReader GetTextReader(int ordinal)
+        {
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
+            try
+            {
+                var column = ordinal + 1;
+                switch (_rs.getMetaData().getColumnType(column))
+                {
+                    case Types.CHAR:
+                    case Types.NCHAR:
+                        var char_ = _rs.getByte(column);
+                        return _rs.wasNull() ? TextReader.Null : new StringReader(((char)char_).ToString());
+                    case Types.VARCHAR:
+                    case Types.NVARCHAR:
+                    case Types.LONGVARCHAR:
+                    case Types.LONGNVARCHAR:
+                        var reader_ = _rs.getCharacterStream(column);
+                        return _rs.wasNull() ? TextReader.Null : new JdbcTextReader(reader_);
+                    case Types.CLOB:
+                        var clob = _rs.getClob(column);
+                        return _rs.wasNull() ? TextReader.Null : new JdbcClobTextReader(_rs.getClob(column));
+                    case Types.NCLOB:
+                        var nclob = _rs.getNClob(column);
+                        return _rs.wasNull() ? TextReader.Null : new JdbcClobTextReader(_rs.getClob(column));
+                    default:
+                        return base.GetTextReader(ordinal);
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
+        }
+
+        /// <inheritdoc />
         public override bool Read()
         {
-            if (_rs == null)
-                throw new JdbcException("JdbcReader is closed.");
-
-            return _rs.next();
+            try
+            {
+                return _rs.next();
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
         }
 
-        /// <summary>
-        /// Advances the reader to the next result when reading the results of a batch of statements.
-        /// </summary>
-        /// <returns></returns>
+        /// <inheritdoc />
         public override bool NextResult()
         {
-            _rs = null;
-            _hasRows = false;
-            _recordsAffected = 0;
-            return false;
-        }
-
-        /// <summary>
-        /// Closes the <see cref="JdbcDataReader"/> object.
-        /// </summary>
-        public override void Close()
-        {
-            if (_rs != null)
+            try
             {
-                _rs.close();
-                _rs = null;
+                _rs?.close();
                 _hasRows = false;
                 _recordsAffected = 0;
+                return false;
             }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
+        }
 
-            base.Close();
+        /// <inheritdoc />
+        public override void Close()
+        {
+            try
+            {
+                _rs?.close();
+                _hasRows = false;
+                _recordsAffected = 0;
+                base.Close();
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
         }
 
     }
