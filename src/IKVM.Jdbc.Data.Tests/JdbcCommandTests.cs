@@ -119,7 +119,7 @@ namespace IKVM.Jdbc.Data.Tests
             rdr.GetName(1).Should().Be("data");
 
             using var stm = rdr.GetStream(1);
-            var buffer = stm.ReadAllBytes();
+            var buffer = stm.ReadAllBytes(4);
             buffer.Length.Should().Be(16);
 
             for (int i = 0; i < 16; i++)
