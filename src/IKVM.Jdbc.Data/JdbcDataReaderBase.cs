@@ -450,7 +450,7 @@ namespace IKVM.Jdbc.Data
             {
                 case null:
                 case DBNull:
-                    throw new JdbcException("Could not write null value to string.");
+                    throw new JdbcException("Could not write null value to bytes.");
                 case byte[] c:
                     var _2 = c.AsSpan().Slice((int)dataOffset);
                     _2.CopyTo(buffer);
@@ -458,7 +458,7 @@ namespace IKVM.Jdbc.Data
                 case Blob n:
                     throw new NotImplementedException($"Could not convert blob into bytes.");
                 default:
-                    throw new JdbcException($"Could not convert {v.GetType()} into string.");
+                    throw new JdbcException($"Could not convert {v.GetType()} into bytes.");
             }
         }
 
