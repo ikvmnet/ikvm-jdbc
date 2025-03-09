@@ -90,7 +90,9 @@ namespace IKVM.Jdbc.Data
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
 
-            var type = _rs.getMetaData().getColumnType(ordinal + 1);
+            // java starts at 1
+            ordinal++;
+            var type = _rs.getMetaData().getColumnType(ordinal);
 
             if (type == JDBCType.ARRAY.ordinal())
                 return typeof(System.Array);
@@ -222,6 +224,8 @@ namespace IKVM.Jdbc.Data
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
 
+            // java starts at 1
+            ordinal++;
             return _rs.getMetaData().getColumnTypeName(ordinal);
         }
 
@@ -235,7 +239,9 @@ namespace IKVM.Jdbc.Data
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
 
-            return _rs.getMetaData().getColumnName(ordinal + 1);
+            // java starts at 1
+            ordinal++;
+            return _rs.getMetaData().getColumnName(ordinal);
         }
 
         /// <summary>
