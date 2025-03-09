@@ -12,6 +12,7 @@ namespace IKVM.Jdbc.Data
 
         readonly InputStream _input;
         readonly long _length;
+        long _position;
         PushbackInputStream? _stream;
 
         /// <summary>
@@ -23,6 +24,7 @@ namespace IKVM.Jdbc.Data
         {
             _input = input ?? throw new ArgumentNullException(nameof(input));
             _length = length;
+            _position = 0;
         }
 
         /// <summary>
@@ -45,7 +47,7 @@ namespace IKVM.Jdbc.Data
         /// <inheritdoc />
         public override long Position
         {
-            get => throw new NotSupportedException();
+            get => _position;
             set => throw new NotSupportedException();
         }
 
@@ -54,7 +56,9 @@ namespace IKVM.Jdbc.Data
         {
             try
             {
-                return Stream.read();
+                var v = Stream.read();
+                _position++;
+                return v;
             }
             catch (java.io.IOException e)
             {
@@ -81,6 +85,7 @@ namespace IKVM.Jdbc.Data
                 if (n <= 0)
                     return 0;
 
+                _position += n;
                 return n;
             }
             catch (java.io.IOException e)
@@ -102,7 +107,8 @@ namespace IKVM.Jdbc.Data
                 var n = Stream.read(b, 0, l);
                 if (n <= 0)
                     return 0;
-
+                    
+                _position += n;
                 b.AsSpan().Slice(0, n).CopyTo(buffer);
                 return n;
             }
@@ -127,10 +133,15 @@ namespace IKVM.Jdbc.Data
                 switch (origin)
                 {
                     case SeekOrigin.Current:
-                        return Stream.skip(offset);
+                        var n1 = Stream.skip(offset);
+                        _position += n1;
+                        return n1;
                     case SeekOrigin.Begin:
                         Stream.reset();
-                        return Stream.skip(offset);
+                        _position = 0;
+                        var n2 = Stream.skip(offset);
+                        _position += n2;
+                        return n2;
                     case SeekOrigin.End:
                         throw new NotSupportedException("Seeking from the end is not supported.");
                     default:
