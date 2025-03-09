@@ -6,8 +6,6 @@ using System.Data.SqlTypes;
 using System.IO;
 using System.Xml.Linq;
 
-using IKVM.Jdbc.Data.Internal;
-
 using java.sql;
 
 namespace IKVM.Jdbc.Data
