@@ -92,126 +92,50 @@ namespace IKVM.Jdbc.Data
 
             // java starts at 1
             ordinal++;
-            var type = _rs.getMetaData().getColumnType(ordinal);
-
-            if (type == JDBCType.ARRAY.ordinal())
-                return typeof(System.Array);
-
-            if (type == JDBCType.BIGINT.ordinal())
-                return typeof(long);
-
-            if (type == JDBCType.BINARY.ordinal())
-                return typeof(byte[]);
-
-            if (type == JDBCType.BIT.ordinal())
-                return typeof(bool);
-
-            if (type == JDBCType.BLOB.ordinal())
-                return typeof(byte[]);
-
-            if (type == JDBCType.BOOLEAN.ordinal())
-                return typeof(bool);
-
-            if (type == JDBCType.CHAR.ordinal())
-                return typeof(string);
-
-            if (type == JDBCType.CLOB.ordinal())
-                return typeof(string);
-
-            if (type == JDBCType.DATALINK.ordinal())
-                throw new NotSupportedException();
-
-            if (type == JDBCType.DATE.ordinal())
-                return typeof(DateTime);
-
-            if (type == JDBCType.DECIMAL.ordinal())
-                return typeof(decimal);
-
-            if (type == JDBCType.DISTINCT.ordinal())
-                throw new NotImplementedException();
-
-            if (type == JDBCType.DOUBLE.ordinal())
-                return typeof(double);
-
-            if (type == JDBCType.FLOAT.ordinal())
-                return typeof(float);
-
-            if (type == JDBCType.INTEGER.ordinal())
-                return typeof(int);
-
-            if (type == JDBCType.JAVA_OBJECT.ordinal())
-                return typeof(object);
-
-            if (type == JDBCType.LONGNVARCHAR.ordinal())
-                return typeof(string);
-
-            if (type == JDBCType.LONGVARBINARY.ordinal())
-                return typeof(byte[]);
-
-            if (type == JDBCType.LONGVARCHAR.ordinal())
-                return typeof(string);
-
-            if (type == JDBCType.NCHAR.ordinal())
-                return typeof(string);
-
-            if (type == JDBCType.NCLOB.ordinal())
-                return typeof(string);
-
-            if (type == JDBCType.NULL.ordinal())
-                return typeof(object);
-
-            if (type == JDBCType.NUMERIC.ordinal())
-                throw new NotImplementedException();
-
-            if (type == JDBCType.NVARCHAR.ordinal())
-                return typeof(string);
-
-            if (type == JDBCType.OTHER.ordinal())
-                throw new NotSupportedException();
-
-            if (type == JDBCType.REAL.ordinal())
-                return typeof(float);
-
-            if (type == JDBCType.REF.ordinal())
-                throw new NotSupportedException();
-
-            if (type == JDBCType.REF_CURSOR.ordinal())
-                throw new NotSupportedException();
-
-            if (type == JDBCType.ROWID.ordinal())
-                throw new NotImplementedException();
-
-            if (type == JDBCType.SMALLINT.ordinal())
-                return typeof(short);
-
-            if (type == JDBCType.SQLXML.ordinal())
-                return typeof(XDocument);
-
-            if (type == JDBCType.STRUCT.ordinal())
-                throw new NotSupportedException();
-
-            if (type == JDBCType.TIME.ordinal())
-                return typeof(TimeSpan);
-
-            if (type == JDBCType.TIMESTAMP.ordinal())
-                return typeof(DateTime);
-
-            if (type == JDBCType.TIMESTAMP_WITH_TIMEZONE.ordinal())
-                return typeof(DateTimeOffset);
-
-            if (type == JDBCType.TIME_WITH_TIMEZONE.ordinal())
-                return typeof(DateTimeOffset);
-
-            if (type == JDBCType.TINYINT.ordinal())
-                return typeof(byte);
-
-            if (type == JDBCType.VARBINARY.ordinal())
-                return typeof(byte[]);
-
-            if (type == JDBCType.VARCHAR.ordinal())
-                return typeof(string);
-
-            throw new NotSupportedException();
+            var type = (JDBCType.__Enum)_rs.getMetaData().getColumnType(ordinal);
+            return type switch
+            {
+                JDBCType.__Enum.ARRAY => typeof(System.Array),
+                JDBCType.__Enum.BIGINT => typeof(long),
+                JDBCType.__Enum.BINARY => typeof(byte[]),
+                JDBCType.__Enum.BIT => typeof(bool),
+                JDBCType.__Enum.BLOB => typeof(byte[]),
+                JDBCType.__Enum.BOOLEAN => typeof(bool),
+                JDBCType.__Enum.CHAR => typeof(string),
+                JDBCType.__Enum.CLOB => typeof(string),
+                JDBCType.__Enum.DATALINK => throw new NotSupportedException(),
+                JDBCType.__Enum.DATE => typeof(DateTime),
+                JDBCType.__Enum.DECIMAL => typeof(decimal),
+                JDBCType.__Enum.DISTINCT => throw new NotImplementedException(),
+                JDBCType.__Enum.DOUBLE => typeof(double),
+                JDBCType.__Enum.FLOAT => typeof(float),
+                JDBCType.__Enum.INTEGER => typeof(int),
+                JDBCType.__Enum.JAVA_OBJECT => typeof(object),
+                JDBCType.__Enum.LONGNVARCHAR => typeof(string),
+                JDBCType.__Enum.LONGVARBINARY => typeof(byte[]),
+                JDBCType.__Enum.LONGVARCHAR => typeof(string),
+                JDBCType.__Enum.NCHAR => typeof(string),
+                JDBCType.__Enum.NCLOB => typeof(string),
+                JDBCType.__Enum.NULL => typeof(object),
+                JDBCType.__Enum.NUMERIC => throw new NotImplementedException(),
+                JDBCType.__Enum.NVARCHAR => typeof(string),
+                JDBCType.__Enum.OTHER => throw new NotSupportedException(),
+                JDBCType.__Enum.REAL => typeof(float),
+                JDBCType.__Enum.REF => throw new NotSupportedException(),
+                JDBCType.__Enum.REF_CURSOR => throw new NotSupportedException(),
+                JDBCType.__Enum.ROWID => throw new NotImplementedException(),
+                JDBCType.__Enum.SMALLINT => typeof(short),
+                JDBCType.__Enum.SQLXML => typeof(XDocument),
+                JDBCType.__Enum.STRUCT => throw new NotSupportedException(),
+                JDBCType.__Enum.TIME => typeof(TimeSpan),
+                JDBCType.__Enum.TIMESTAMP => typeof(DateTime),
+                JDBCType.__Enum.TIMESTAMP_WITH_TIMEZONE => typeof(DateTimeOffset),
+                JDBCType.__Enum.TIME_WITH_TIMEZONE => typeof(DateTimeOffset),
+                JDBCType.__Enum.TINYINT => typeof(byte),
+                JDBCType.__Enum.VARBINARY => typeof(byte[]),
+                JDBCType.__Enum.VARCHAR => typeof(string),
+                _ => throw new NotSupportedException(),
+            };
         }
 
         /// <summary>
