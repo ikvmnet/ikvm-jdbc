@@ -28,27 +28,27 @@ namespace IKVM.Jdbc.Data
         /// <summary>
         /// Gets or sets the user to use when opening the connection.
         /// </summary>
-        public string User
+        public string? User
         {
-            get => this["user"] as string;
+            get => ContainsKey("user") ? this["user"] as string : null;
             set => this["user"] = value;
         }
 
         /// <summary>
         /// Gets or sets the user to use when opening the connection.
         /// </summary>
-        public string Password
+        public string? Password
         {
-            get => this["password"] as string;
+            get => ContainsKey("password") ? this["password"] as string : null;
             set => this["password"] = value;
         }
 
         /// <summary>
         /// Gets or sets the JDBC URL.
         /// </summary>
-        public string Url
+        public string? Url
         {
-            get => this["url"] as string;
+            get => ContainsKey("url") ? this["url"] as string : null;
             set => this["url"] = value;
         }
 

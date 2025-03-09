@@ -2,6 +2,7 @@
 
     <PropertyGroup>
         <TargetFrameworks>net472;net6.0;net8.0;net9.0</TargetFrameworks>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
@@ -9,7 +10,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <MavenReference Include="org.xerial:sqlite-jdbc" Version="3.7.2" />
+        <MavenReference Include="org.xerial:sqlite-jdbc" Version="3.49.1.0" />
     </ItemGroup>
 
     <ItemGroup>

@@ -62,7 +62,7 @@ namespace IKVM.Jdbc.Data.Tests
             using var cmd = cnn.CreateCommand();
             cmd.CommandText = "drop table if exists CanExecuteReader";
             cmd.ExecuteNonQuery();
-            cmd.CommandText = "create table CanExecuteReader (id integer, name string)";
+            cmd.CommandText = "create table CanExecuteReader (id integer, name text)";
             cmd.ExecuteNonQuery();
             cmd.CommandText = "insert into CanExecuteReader values(1, 'leo')";
             cmd.ExecuteNonQuery();
@@ -72,14 +72,14 @@ namespace IKVM.Jdbc.Data.Tests
             cmd.ExecuteNonQuery();
             cmd.CommandText = "select * from CanExecuteReader";
             using var rdr = cmd.ExecuteReader();
-            var list = new List<(long, object)>();
+            var list = new List<(long, string?)>();
             while (rdr.Read())
-                list.Add((rdr.GetFieldValue<long>(rdr.GetOrdinal("id")), rdr.GetValue(1)));
+                list.Add((rdr.GetInt64(0), rdr.IsDBNull(1) ? null : rdr.GetString(1)));
 
             list.Should().HaveCount(3);
-            list.Should().Contain(x => x.Item1 == 1 && (string)x.Item2 == "leo");
-            list.Should().Contain(x => x.Item1 == 2 && (string)x.Item2 == "yui");
-            list.Should().Contain(x => x.Item1 == 3 && x.Item2 == DBNull.Value);
+            list.Should().Contain(x => x.Item1 == 1 && x.Item2 == "leo");
+            list.Should().Contain(x => x.Item1 == 2 && x.Item2 == "yui");
+            list.Should().Contain(x => x.Item1 == 3 && x.Item2 == null);
         }
 
         [TestMethod]
@@ -90,7 +90,7 @@ namespace IKVM.Jdbc.Data.Tests
             using var cmd = cnn.CreateCommand();
             cmd.CommandText = "drop table if exists CanExecuteReaderAsync";
             await cmd.ExecuteNonQueryAsync();
-            cmd.CommandText = "create table CanExecuteReaderAsync (id integer, name string)";
+            cmd.CommandText = "create table CanExecuteReaderAsync (id integer, name text)";
             await cmd.ExecuteNonQueryAsync();
             cmd.CommandText = "insert into CanExecuteReaderAsync values(1, 'leo')";
             await cmd.ExecuteNonQueryAsync();
@@ -100,14 +100,14 @@ namespace IKVM.Jdbc.Data.Tests
             await cmd.ExecuteNonQueryAsync();
             cmd.CommandText = "select * from CanExecuteReaderAsync";
             using var rdr = await cmd.ExecuteReaderAsync();
-            var list = new List<(long, object)>();
+            var list = new List<(long, string?)>();
             while (await rdr.ReadAsync())
-                list.Add((await rdr.GetFieldValueAsync<long>(rdr.GetOrdinal("id")), rdr.GetValue(1)));
+                list.Add((rdr.GetInt64(0), rdr.IsDBNull(1) ? null : rdr.GetString(1)));
 
             list.Should().HaveCount(3);
-            list.Should().Contain(x => x.Item1 == 1 && (string)x.Item2 == "leo");
-            list.Should().Contain(x => x.Item1 == 2 && (string)x.Item2 == "yui");
-            list.Should().Contain(x => x.Item1 == 3 && x.Item2 == DBNull.Value);
+            list.Should().Contain(x => x.Item1 == 1 && x.Item2 == "leo");
+            list.Should().Contain(x => x.Item1 == 2 && x.Item2 == "yui");
+            list.Should().Contain(x => x.Item1 == 3 && x.Item2 == null);
         }
 
     }
