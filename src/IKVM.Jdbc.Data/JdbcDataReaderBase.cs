@@ -94,6 +94,8 @@ namespace IKVM.Jdbc.Data
         {
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
 
             try
             {
@@ -157,6 +159,8 @@ namespace IKVM.Jdbc.Data
         {
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
 
             try
             {
@@ -177,6 +181,8 @@ namespace IKVM.Jdbc.Data
         public override string GetName(int ordinal)
         {
             if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
 
             try
@@ -219,6 +225,8 @@ namespace IKVM.Jdbc.Data
         public override object GetValue(int ordinal)
         {
             if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
 
             try
@@ -375,6 +383,11 @@ namespace IKVM.Jdbc.Data
         /// <returns></returns>
         public override bool IsDBNull(int ordinal)
         {
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
             try
             {
                 GetValue(ordinal);
@@ -394,6 +407,8 @@ namespace IKVM.Jdbc.Data
         public override bool GetBoolean(int ordinal)
         {
             if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
 
             try
@@ -456,6 +471,8 @@ namespace IKVM.Jdbc.Data
         {
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
 
             try
             {
@@ -500,6 +517,8 @@ namespace IKVM.Jdbc.Data
         {
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
 
             try
             {
@@ -539,6 +558,8 @@ namespace IKVM.Jdbc.Data
         public override long GetBytes(int ordinal, long dataOffset, byte[]? buffer, int bufferOffset, int length)
         {
             if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
             if (dataOffset < 0)
                 throw new ArgumentOutOfRangeException(nameof(dataOffset));
@@ -599,6 +620,8 @@ namespace IKVM.Jdbc.Data
         public long GetBytes(int ordinal, long dataOffset, Span<byte> buffer)
         {
             if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
             if (dataOffset < 0)
                 throw new ArgumentOutOfRangeException(nameof(dataOffset));
@@ -668,6 +691,8 @@ namespace IKVM.Jdbc.Data
         {
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
 
             try
             {
@@ -705,6 +730,8 @@ namespace IKVM.Jdbc.Data
         public char[]? GetChars(int ordinal)
         {
             if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
 
             try
@@ -748,6 +775,8 @@ namespace IKVM.Jdbc.Data
         public override long GetChars(int ordinal, long dataOffset, char[]? buffer, int bufferOffset, int length)
         {
             if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
             if (dataOffset < 0)
                 throw new ArgumentOutOfRangeException(nameof(dataOffset));
@@ -809,6 +838,8 @@ namespace IKVM.Jdbc.Data
         public long GetChars(int ordinal, long dataOffset, Span<char> buffer)
         {
             if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
             if (dataOffset < 0)
                 throw new ArgumentOutOfRangeException(nameof(dataOffset));
@@ -873,6 +904,11 @@ namespace IKVM.Jdbc.Data
         /// <inheritdoc />
         public override DateTime GetDateTime(int ordinal)
         {
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
             return (DateTime)GetValue(ordinal);
         }
 
@@ -880,6 +916,8 @@ namespace IKVM.Jdbc.Data
         public override decimal GetDecimal(int ordinal)
         {
             if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
 
             try
@@ -920,6 +958,8 @@ namespace IKVM.Jdbc.Data
         {
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
 
             try
             {
@@ -953,6 +993,8 @@ namespace IKVM.Jdbc.Data
         {
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
 
             try
             {
@@ -978,6 +1020,11 @@ namespace IKVM.Jdbc.Data
         /// <inheritdoc />
         public override Guid GetGuid(int ordinal)
         {
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
             return Guid.Parse((string)GetValue(ordinal));
         }
 
@@ -985,6 +1032,8 @@ namespace IKVM.Jdbc.Data
         public override short GetInt16(int ordinal)
         {
             if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
 
             try
@@ -1018,6 +1067,8 @@ namespace IKVM.Jdbc.Data
         public override int GetInt32(int ordinal)
         {
             if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
 
             try
@@ -1057,6 +1108,8 @@ namespace IKVM.Jdbc.Data
         public override long GetInt64(int ordinal)
         {
             if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
 
             try
@@ -1103,6 +1156,8 @@ namespace IKVM.Jdbc.Data
         {
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
 
             try
             {
@@ -1142,6 +1197,8 @@ namespace IKVM.Jdbc.Data
         {
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
 
             try
             {
@@ -1168,6 +1225,8 @@ namespace IKVM.Jdbc.Data
         public override TextReader GetTextReader(int ordinal)
         {
             if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
 
             try
