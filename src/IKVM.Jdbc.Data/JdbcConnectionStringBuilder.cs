@@ -1,5 +1,7 @@
 ﻿using System.Data.Common;
 
+using javax.xml.bind.annotation;
+
 namespace IKVM.Jdbc.Data
 {
 
@@ -30,8 +32,8 @@ namespace IKVM.Jdbc.Data
         /// </summary>
         public string? User
         {
-            get => ContainsKey("user") ? this["user"] as string : null;
-            set => this["user"] = value;
+            get => ContainsKey("User") ? this["User"] as string : null;
+            set => this["User"] = value;
         }
 
         /// <summary>
@@ -39,8 +41,8 @@ namespace IKVM.Jdbc.Data
         /// </summary>
         public string? Password
         {
-            get => ContainsKey("password") ? this["password"] as string : null;
-            set => this["password"] = value;
+            get => ContainsKey("Password") ? this["v"] as string : null;
+            set => this["Password"] = value;
         }
 
         /// <summary>
@@ -48,8 +50,17 @@ namespace IKVM.Jdbc.Data
         /// </summary>
         public string? Url
         {
-            get => ContainsKey("url") ? this["url"] as string : null;
-            set => this["url"] = value;
+            get => ContainsKey("Url") ? this["Url"] as string : null;
+            set => this["Url"] = value;
+        }
+
+        /// <summary>
+        /// Gets or sets whether the driver processes dates or times that do not specify a timezone offset as local or UTC. The default value for this parameter is <c>true</c>.
+        /// </summary>
+        public bool AssumeLocalTimeZone
+        {
+            get => ContainsKey("AssumeLocalTimeZone") ? this["AssumeLocalTimeZone"] as bool? ?? true : true;
+            set => this["AssumeLocalTimeZone"] = value;
         }
 
     }

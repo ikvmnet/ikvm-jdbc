@@ -44,6 +44,59 @@ namespace IKVM.Jdbc.Data.Tests
         }
 
         [TestMethod]
+        public void CanGetPrimitiveFieldValuesByType()
+        {
+            using var cnn = CreateTestConnection();
+            cnn.Open();
+
+            using var cmd = cnn.CreateCommand();
+            cmd.CommandText = "drop table if exists CanGetPrimitiveFieldValuesByType";
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "create table CanGetPrimitiveFieldValuesByType (id integer)";
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "insert into CanGetPrimitiveFieldValuesByType values (1)";
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "select * from CanGetPrimitiveFieldValuesByType";
+            using var rdr = cmd.ExecuteReader();
+            rdr.FieldCount.Should().Be(1);
+            rdr.GetName(0).Should().Be("id");
+            rdr.GetFieldValue<int>(0).Should().Be(1);
+        }
+
+        [TestMethod]
+        public void CanGetNullablePrimitiveFieldValuesByType()
+        {
+            using var cnn = CreateTestConnection();
+            cnn.Open();
+
+            using var cmd = cnn.CreateCommand();
+            cmd.CommandText = "drop table if exists CanGetPrimitiveFieldValuesByType";
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "create table CanGetPrimitiveFieldValuesByType (id integer)";
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "insert into CanGetPrimitiveFieldValuesByType values (null)";
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "select * from CanGetPrimitiveFieldValuesByType";
+            using var rdr = cmd.ExecuteReader();
+            rdr.FieldCount.Should().Be(1);
+            rdr.GetName(0).Should().Be("id");
+            rdr.GetFieldValue<int?>(0).Should().BeNull();
+        }
+
+        [TestMethod]
+        public void CanGetStringAsDateTime()
+        {
+            using var cnn = CreateTestConnection();
+            cnn.Open();
+
+            using var cmd = cnn.CreateCommand();
+            cmd.CommandText = "select current_timestamp";
+            using var rdr = cmd.ExecuteReader();
+            rdr.FieldCount.Should().Be(1);
+            rdr.GetFieldValue<DateTime>(0).Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
+        }
+
+        [TestMethod]
         public void CanGetBytesToArray()
         {
             using var cnn = CreateTestConnection();

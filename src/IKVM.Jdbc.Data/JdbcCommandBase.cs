@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -18,9 +19,10 @@ namespace IKVM.Jdbc.Data
 
         readonly object _syncRoot = new object();
         readonly JdbcParameterCollection _parameters = new JdbcParameterCollection();
-        JdbcConnection _connection;
-        PreparedStatement _prepared;
-        Statement _executing;
+        JdbcConnection? _connection;
+        string? _commandText;
+        PreparedStatement? _prepared;
+        Statement? _executing;
 
         /// <summary>
         /// Creates a new command.
@@ -36,7 +38,7 @@ namespace IKVM.Jdbc.Data
         /// <param name="connection"></param>
         internal JdbcCommandBase(JdbcConnection connection)
         {
-            this._connection = connection;
+            _connection = connection ?? throw new ArgumentNullException(nameof(connection));
         }
 
         /// <summary>
@@ -74,10 +76,10 @@ namespace IKVM.Jdbc.Data
         /// <summary>
         /// Gets or sets the database connection.
         /// </summary>
-        protected override DbConnection DbConnection
+        protected override DbConnection? DbConnection
         {
             get => _connection;
-            set => ExecutingLock(() => _connection = (JdbcConnection)value);
+            set => ExecutingLock(() => _connection = (JdbcConnection?)value);
         }
 
         /// <summary>
@@ -88,7 +90,14 @@ namespace IKVM.Jdbc.Data
         /// <summary>
         /// Gets or sets the text command to run against the data source.
         /// </summary>
-        public override string CommandText { get; set; }
+#if NET
+        [AllowNull]
+#endif
+        public override string CommandText
+        {
+            get => _commandText ?? "";
+            set => _commandText = value;
+        }
 
         /// <summary>
         /// Gets or sets the wait time (in seconds) before terminating the attempt to execute the command and generating an error.
@@ -113,7 +122,7 @@ namespace IKVM.Jdbc.Data
         /// <summary>
         /// Gets or sets the <see cref="DbTransaction"/> within which this <see cref="JdbcCommandBase"/> object executes.
         /// </summary>
-        protected override DbTransaction DbTransaction { get; set; }
+        protected override DbTransaction? DbTransaction { get; set; }
 
         /// <summary>
         /// Creates a new instance of a <see cref="DbParameter"/> object.
@@ -131,7 +140,7 @@ namespace IKVM.Jdbc.Data
         /// Builds the JDBC escape string for a stored procedure call.
         /// </summary>
         /// <returns></returns>
-        string BuildJdbcStoredProcedureCallString()
+        string? BuildJdbcStoredProcedureCallString()
         {
             var b = new StringBuilder("{{ ");
 
@@ -165,6 +174,9 @@ namespace IKVM.Jdbc.Data
 
                 if (_prepared != null)
                     throw new JdbcException("Command is already prepared.");
+
+                if (_connection._connection is null)
+                    throw new InvalidOperationException();
 
                 try
                 {
@@ -232,6 +244,9 @@ namespace IKVM.Jdbc.Data
 
                 if (_connection.State != ConnectionState.Open)
                     throw new JdbcException("Connection must be open.");
+
+                if (_connection._connection is null)
+                    throw new InvalidOperationException();
 
                 try
                 {
@@ -320,7 +335,7 @@ namespace IKVM.Jdbc.Data
         /// Executes the command and returns the first column of the first row in the first returned result set. All other columns, rows and result sets are ignored.
         /// </summary>
         /// <returns></returns>
-        public override object ExecuteScalar()
+        public override object? ExecuteScalar()
         {
             // execute a reader with a single result
             using var rdr = ExecuteDbDataReader(CommandBehavior.SingleResult);
@@ -344,6 +359,9 @@ namespace IKVM.Jdbc.Data
 
                 if (_connection.State != ConnectionState.Open)
                     throw new JdbcException("Connection must be open.");
+
+                if (_connection._connection is null)
+                    throw new InvalidOperationException();
 
                 try
                 {
@@ -378,7 +396,7 @@ namespace IKVM.Jdbc.Data
                                 Monitor.Enter(_syncRoot);
                             }
 
-                            return new JdbcDataReader(rs, _prepared.getUpdateCount());
+                            return new JdbcDataReader((JdbcCommand)this, rs, _prepared.getUpdateCount());
                         }
                         finally
                         {
@@ -392,7 +410,7 @@ namespace IKVM.Jdbc.Data
                             _executing = _connection._connection.createStatement();
                             _executing.setQueryTimeout(CommandTimeout);
 
-                            ResultSet rs = null;
+                            ResultSet? rs = null;
 
                             // release lock while executing, but reattain upon completion
                             Monitor.Exit(_syncRoot);
@@ -415,7 +433,10 @@ namespace IKVM.Jdbc.Data
                                 Monitor.Enter(_syncRoot);
                             }
 
-                            return new JdbcDataReader(rs, _executing.getUpdateCount());
+                            if (rs == null)
+                                throw new InvalidOperationException();
+
+                            return new JdbcDataReader((JdbcCommand)this, rs, _executing.getUpdateCount());
                         }
                         finally
                         {

@@ -27,7 +27,7 @@ namespace IKVM.Jdbc.Data
         /// <param name="index"></param>
         /// <param name="type"></param>
         /// <param name="value"></param>
-        public static void SetParameterValue(this PreparedStatement statement, int index, DbType type, object value)
+        public static void SetParameterValue(this PreparedStatement statement, int index, DbType type, object? value)
         {
             if (statement is null)
                 throw new ArgumentNullException(nameof(statement));

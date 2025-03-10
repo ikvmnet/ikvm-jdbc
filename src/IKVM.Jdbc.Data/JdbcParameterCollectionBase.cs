@@ -220,7 +220,7 @@ namespace IKVM.Jdbc.Data
             if (parameterName is null)
                 throw new ArgumentNullException(nameof(parameterName));
 
-            return _self.FirstOrDefault(i => i.ParameterName == parameterName);
+            return _self.FirstOrDefault(i => i.ParameterName == parameterName) ?? throw new IndexOutOfRangeException();
         }
 
         /// <summary>

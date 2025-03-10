@@ -30,18 +30,18 @@ namespace IKVM.Jdbc.Data
         /// <summary>
         /// Gets the connection associated with this command.
         /// </summary>
-        public new JdbcConnection Connection
+        public new JdbcConnection? Connection
         {
-            get => (JdbcConnection)base.Connection;
+            get => (JdbcConnection?)base.Connection;
             set => base.Connection = value;
         }
 
         /// <summary>
         /// Gets or sets the <see cref="JdbcTransaction"/> within which this <see cref="JdbcCommand"/> object executes.
         /// </summary>
-        public new JdbcTransaction Transaction
+        public new JdbcTransaction? Transaction
         {
-            get => (JdbcTransaction)base.Transaction;
+            get => (JdbcTransaction?)base.Transaction;
             set => base.Transaction = value;
         }
 

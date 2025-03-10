@@ -15,10 +15,11 @@ namespace IKVM.Jdbc.Data
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
+        /// <param name="command"></param>
         /// <param name="rs"></param>
         /// <param name="recordsAffected"></param>
-        public JdbcDataReader(ResultSet rs, int recordsAffected) :
-            base(rs, recordsAffected)
+        internal JdbcDataReader(JdbcCommand command, ResultSet rs, int recordsAffected) :
+            base(command, rs, recordsAffected)
         {
 
         }

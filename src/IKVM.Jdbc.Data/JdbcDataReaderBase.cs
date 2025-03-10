@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Collections;
 using System.Data.Common;
 using System.Data.SqlTypes;
+using System.Globalization;
 using System.IO;
 using System.Xml.Linq;
 
@@ -19,6 +20,7 @@ namespace IKVM.Jdbc.Data
 
         const int DEFAULT_BUFFER_SIZE = 1024;
 
+        readonly JdbcCommand _command;
         ResultSet _rs;
         int _recordsAffected;
         bool _hasRows;
@@ -26,13 +28,15 @@ namespace IKVM.Jdbc.Data
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
+        /// <param name="command"></param>
         /// <param name="rs"></param>
         /// <param name="recordsAffected"></param>
-        internal JdbcDataReaderBase(ResultSet rs, int recordsAffected)
+        internal JdbcDataReaderBase(JdbcCommand command, ResultSet rs, int recordsAffected)
         {
-            this._rs = rs ?? throw new ArgumentNullException(nameof(rs));
-            this._recordsAffected = recordsAffected;
-            this._hasRows = rs.isBeforeFirst();
+            _command = command ?? throw new ArgumentNullException(nameof(command));
+            _rs = rs ?? throw new ArgumentNullException(nameof(rs));
+            _recordsAffected = recordsAffected;
+            _hasRows = rs.isBeforeFirst();
         }
 
         /// <summary>
@@ -111,7 +115,11 @@ namespace IKVM.Jdbc.Data
                     Types.CHAR => typeof(string),
                     Types.CLOB => typeof(string),
                     Types.DATALINK => throw new NotSupportedException(),
+#if NETFRAMEWORK
                     Types.DATE => typeof(DateTime),
+#else
+                    Types.DATE => typeof(DateOnly),
+#endif
                     Types.DECIMAL => typeof(decimal),
                     Types.DISTINCT => throw new NotImplementedException(),
                     Types.DOUBLE => typeof(double),
@@ -261,8 +269,13 @@ namespace IKVM.Jdbc.Data
                     case Types.DATALINK:
                         throw new NotSupportedException();
                     case Types.DATE:
+#if NETFRAMEWORK
                         var date_ = _rs.getDate(column);
-                        return _rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(date_.getTime()).UtcDateTime;
+                        return _rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(date_.getTime()).Date;
+#else
+                        var date_ = _rs.getDate(column);
+                        return _rs.wasNull() ? DBNull.Value : DateOnly.FromDateTime(DateTimeOffset.FromUnixTimeMilliseconds(date_.getTime()).Date);
+#endif
                     case Types.DECIMAL:
                         var decimal_ = _rs.getBigDecimal(column);
                         return _rs.wasNull() ? DBNull.Value : decimal.Parse(decimal_.toString());
@@ -322,17 +335,20 @@ namespace IKVM.Jdbc.Data
                     case Types.STRUCT:
                         throw new NotSupportedException();
                     case Types.TIME:
+#if NETFRAMEWORK
                         var time_ = _rs.getTime(column);
-                        return _rs.wasNull() ? DBNull.Value : TimeSpan.FromMilliseconds(time_.getTime());
+                        return _rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(time_.getTime()).TimeOfDay;
+#else
+                        var time_ = _rs.getTime(column);
+                        return _rs.wasNull() ? DBNull.Value : TimeOnly.FromDateTime(DateTimeOffset.FromUnixTimeMilliseconds(time_.getTime()).DateTime);
+#endif
                     case Types.TIMESTAMP:
-                        var timestamp_ = _rs.getTime(column);
-                        return _rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(timestamp_.getTime()).UtcDateTime;
+                        var timestamp_ = _rs.getTimestamp(column);
+                        return _rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(timestamp_.getTime()).DateTime;
                     case Types.TIMESTAMP_WITH_TIMEZONE:
-                        var timestampwithtimezone_ = _rs.getTime(column);
-                        return _rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(timestampwithtimezone_.getTime());
+                        throw new NotImplementedException();
                     case Types.TIME_WITH_TIMEZONE:
-                        var timewithtimezone_ = _rs.getTime(column);
-                        return _rs.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(timewithtimezone_.getTime());
+                        throw new NotImplementedException();
                     case Types.TINYINT:
                         var tinyint_ = _rs.getByte(column);
                         return _rs.wasNull() ? DBNull.Value : tinyint_;
@@ -351,6 +367,167 @@ namespace IKVM.Jdbc.Data
                 throw new JdbcException(e);
             }
         }
+
+        /// <inheritdoc />
+#pragma warning disable CS8603
+        public override T GetFieldValue<T>(int ordinal)
+        {
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
+            try
+            {
+                var column = ordinal + 1;
+                if (typeof(T) == typeof(bool))
+                {
+                    var value = GetBoolean(ordinal);
+                    return (T)(object)value;
+                }
+                else if (typeof(T) == typeof(bool?))
+                {
+                    var value = GetNullableBoolean(ordinal);
+                    return value is not null ? (T)(object)value : default;
+                }
+                else if (typeof(T) == typeof(byte))
+                {
+                    var value = GetByte(ordinal);
+                    return (T)(object)value;
+                }
+                else if (typeof(T) == typeof(byte?))
+                {
+                    var value = GetNullableByte(ordinal);
+                    return value is not null ? (T)(object)value : default;
+                }
+                else if (typeof(T) == typeof(short))
+                {
+                    var value = GetInt16(ordinal);
+                    return (T)(object)value;
+                }
+                else if (typeof(T) == typeof(short?))
+                {
+                    var value = GetNullableInt16(ordinal);
+                    return value is not null ? (T)(object)value : default;
+                }
+                else if (typeof(T) == typeof(int))
+                {
+                    var value = GetInt32(ordinal);
+                    return (T)(object)value;
+                }
+                else if (typeof(T) == typeof(int?))
+                {
+                    var value = GetNullableInt32(ordinal);
+                    return value is not null ? (T)(object)value : default;
+                }
+                else if (typeof(T) == typeof(long))
+                {
+                    var value = GetInt64(ordinal);
+                    return (T)(object)value;
+                }
+                else if (typeof(T) == typeof(long?))
+                {
+                    var value = GetNullableInt64(ordinal);
+                    return value is not null ? (T)(object)value : default;
+                }
+                else if (typeof(T) == typeof(float))
+                {
+                    var value = GetFloat(ordinal);
+                    return (T)(object)value;
+                }
+                else if (typeof(T) == typeof(float?))
+                {
+                    var value = GetNullableFloat(ordinal);
+                    return value is not null ? (T)(object)value : default;
+                }
+                else if (typeof(T) == typeof(double))
+                {
+                    var value = GetDouble(ordinal);
+                    return (T)(object)value;
+                }
+                else if (typeof(T) == typeof(double?))
+                {
+                    var value = GetNullableDouble(ordinal);
+                    return value is not null ? (T)(object)value : default;
+                }
+                else if (typeof(T) == typeof(decimal))
+                {
+                    var value = GetDecimal(ordinal);
+                    return (T)(object)value;
+                }
+                else if (typeof(T) == typeof(decimal?))
+                {
+                    var value = GetNullableDecimal(ordinal);
+                    return value is not null ? (T)(object)value : default;
+                }
+                else if (typeof(T) == typeof(string))
+                {
+                    var value = GetString(ordinal);
+                    return (T)(object)value;
+                }
+                else if (typeof(T) == typeof(DateTime))
+                {
+                    var value = GetDateTime(ordinal);
+                    return (T)(object)value;
+                }
+                else if (typeof(T) == typeof(DateTime?))
+                {
+                    var value = GetNullableDateTime(ordinal);
+                    return value is not null ? (T)(object)value : default;
+                }
+                else if (typeof(T) == typeof(TimeSpan))
+                {
+                    var value = GetTimeSpan(ordinal);
+                    return (T)(object)value;
+                }
+                else if (typeof(T) == typeof(TimeSpan?))
+                {
+                    var value = GetNullableTimeSpan(ordinal);
+                    return value is not null ? (T)(object)value : default;
+                }
+#if NET
+                else if (typeof(T) == typeof(DateOnly))
+                {
+                    var value = GetDateOnly(ordinal);
+                    return (T)(object)value;
+                }
+                else if (typeof(T) == typeof(DateOnly?))
+                {
+                    var value = GetNullableDateOnly(ordinal);
+                    return value is not null ? (T)(object)value : default;
+                }
+                else if (typeof(T) == typeof(TimeOnly))
+                {
+                    var value = GetTimeOnly(ordinal);
+                    return (T)(object)value;
+                }
+                else if (typeof(T) == typeof(TimeOnly?))
+                {
+                    var value = GetNullableTimeOnly(ordinal);
+                    return value is not null ? (T)(object)value : default;
+                }
+#endif
+                else if (typeof(T) == typeof(byte[]))
+                {
+                    var value = GetBytes(ordinal);
+                    return value is not null ? (T)(object)value : default;
+                }
+                else if (typeof(T) == typeof(char[]))
+                {
+                    var value = GetChars(ordinal);
+                    return value is not null ? (T)(object)value : default;
+                }
+                else
+                {
+                    return (T)GetValue(ordinal);
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
+        }
+#pragma warning restore CS8603
 
         /// <summary>
         /// Populates an array of <see cref="object"/> with the column values of the current row.
@@ -406,68 +583,15 @@ namespace IKVM.Jdbc.Data
         /// <returns></returns>
         public override bool GetBoolean(int ordinal)
         {
-            if (ordinal < 0)
-                throw new ArgumentOutOfRangeException(nameof(ordinal));
-            if (ordinal >= _rs.getMetaData().getColumnCount())
-                throw new ArgumentOutOfRangeException(nameof(ordinal));
-
-            try
-            {
-                var column = ordinal + 1;
-                switch (_rs.getMetaData().getColumnType(column))
-                {
-                    case Types.BOOLEAN:
-                        var bool_ = _rs.getBoolean(column);
-                        if (_rs.wasNull())
-                            throw new SqlNullValueException();
-
-                        return bool_;
-                    case Types.BIT:
-                        var bit_ = _rs.getBoolean(column);
-                        if (_rs.wasNull())
-                            throw new SqlNullValueException();
-
-                        return bit_;
-                    case Types.TINYINT:
-                        var byte_ = _rs.getByte(column);
-                        if (_rs.wasNull())
-                            throw new SqlNullValueException();
-
-                        return byte_ != 0;
-                    case Types.SMALLINT:
-                        var short_ = _rs.getShort(column);
-                        if (_rs.wasNull())
-                            throw new SqlNullValueException();
-
-                        return short_ != 0;
-                    case Types.INTEGER:
-                        var int_ = _rs.getInt(column);
-                        if (_rs.wasNull())
-                            throw new SqlNullValueException();
-
-                        return int_ != 0;
-                    case Types.BIGINT:
-                        var long_ = _rs.getLong(column);
-                        if (_rs.wasNull())
-                            throw new SqlNullValueException();
-
-                        return long_ != 0;
-                    default:
-                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnType(column)} into Boolean.");
-                }
-            }
-            catch (SQLException e)
-            {
-                throw new JdbcException(e);
-            }
+            return GetNullableBoolean(ordinal) ?? throw new SqlNullValueException();
         }
 
         /// <summary>
-        /// Gets the value of the specified column as a <see cref="byte"/>.
+        /// Gets the value of the specified column as a <see cref="bool?"/>.
         /// </summary>
         /// <param name="ordinal"></param>
         /// <returns></returns>
-        public override byte GetByte(int ordinal)
+        bool? GetNullableBoolean(int ordinal)
         {
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
@@ -482,23 +606,88 @@ namespace IKVM.Jdbc.Data
                     case Types.BOOLEAN:
                         var bool_ = _rs.getBoolean(column);
                         if (_rs.wasNull())
-                            throw new SqlNullValueException();
+                            return null;
+
+                        return bool_;
+                    case Types.BIT:
+                        var bit_ = _rs.getBoolean(column);
+                        if (_rs.wasNull())
+                            return null;
+
+                        return bit_;
+                    case Types.TINYINT:
+                        var byte_ = _rs.getByte(column);
+                        if (_rs.wasNull())
+                            return null;
+
+                        return byte_ != 0;
+                    case Types.SMALLINT:
+                        var short_ = _rs.getShort(column);
+                        if (_rs.wasNull())
+                            return null;
+
+                        return short_ != 0;
+                    case Types.INTEGER:
+                        var int_ = _rs.getInt(column);
+                        if (_rs.wasNull())
+                            return null;
+
+                        return int_ != 0;
+                    case Types.BIGINT:
+                        var long_ = _rs.getLong(column);
+                        if (_rs.wasNull())
+                            return null;
+
+                        return long_ != 0;
+                    default:
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnTypeName(column)} into Boolean.");
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
+        }
+
+        /// <inheritdoc />
+        public override byte GetByte(int ordinal)
+        {
+            return GetNullableByte(ordinal) ?? throw new SqlNullValueException();
+        }
+
+        /// <inheritdoc />
+        byte? GetNullableByte(int ordinal)
+        {
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
+            try
+            {
+                var column = ordinal + 1;
+                switch (_rs.getMetaData().getColumnType(column))
+                {
+                    case Types.BOOLEAN:
+                        var bool_ = _rs.getBoolean(column);
+                        if (_rs.wasNull())
+                            return null;
 
                         return bool_ ? (byte)1 : (byte)0;
                     case Types.BIT:
                         var bit_ = _rs.getBoolean(column);
                         if (_rs.wasNull())
-                            throw new SqlNullValueException();
+                            return null;
 
                         return bit_ ? (byte)1 : (byte)0;
                     case Types.TINYINT:
                         var byte_ = _rs.getByte(column);
                         if (_rs.wasNull())
-                            throw new SqlNullValueException();
+                            return null;
 
                         return byte_;
                     default:
-                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnType(column)} into Byte.");
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnTypeName(column)} into Byte.");
                 }
             }
             catch (SQLException e)
@@ -535,7 +724,7 @@ namespace IKVM.Jdbc.Data
 
                         return b;
                     default:
-                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnType(column)} into Byte[].");
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnTypeName(column)} into Byte[].");
                 }
             }
             catch (SQLException e)
@@ -712,7 +901,7 @@ namespace IKVM.Jdbc.Data
 
                         return (char)nchar_;
                     default:
-                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnType(column)} into Char.");
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnTypeName(column)} into Char.");
                 }
             }
             catch (SQLException e)
@@ -752,7 +941,7 @@ namespace IKVM.Jdbc.Data
 
                         return b.ToCharArray();
                     default:
-                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnType(column)} into Byte[].");
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnTypeName(column)} into Byte[].");
                 }
             }
             catch (SQLException e)
@@ -904,16 +1093,213 @@ namespace IKVM.Jdbc.Data
         /// <inheritdoc />
         public override DateTime GetDateTime(int ordinal)
         {
+            return GetNullableDateTime(ordinal) ?? throw new SqlNullValueException();
+        }
+
+        /// <inheritdoc />
+        DateTime? GetNullableDateTime(int ordinal)
+        {
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
             if (ordinal >= _rs.getMetaData().getColumnCount())
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
 
-            return (DateTime)GetValue(ordinal);
+            try
+            {
+                var column = ordinal + 1;
+                switch (_rs.getMetaData().getColumnType(column))
+                {
+                    case Types.DATE:
+                        var date_ = _rs.getDate(column);
+                        return _rs.wasNull() ? null : DateTimeOffset.FromUnixTimeMilliseconds(date_.getTime()).DateTime;
+                    case Types.TIME:
+                        var time_ = _rs.getTime(column);
+                        return _rs.wasNull() ? null : DateTimeOffset.FromUnixTimeMilliseconds(time_.getTime()).DateTime;
+                    case Types.TIMESTAMP:
+                        var timestamp_ = _rs.getTimestamp(column);
+                        return _rs.wasNull() ? null : DateTimeOffset.FromUnixTimeMilliseconds(timestamp_.getTime()).DateTime;
+                    case Types.VARCHAR:
+                    case Types.NVARCHAR:
+                    case Types.LONGVARCHAR:
+                    case Types.LONGNVARCHAR:
+                        var string_ = _rs.getString(column);
+                        if (_rs.wasNull())
+                            return null;
+
+                        // default to assuming the local timezone
+                        var styles = DateTimeStyles.AssumeLocal;
+                        if (_command.Connection?.ConnectionStringBuilder?.AssumeLocalTimeZone == false)
+                            styles = DateTimeStyles.AssumeUniversal;
+
+                        // parse as datetimeoffset, and then return dateonly value
+                        if (DateTimeOffset.TryParse(string_, null, styles, out var d))
+                            return d.DateTime;
+
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnTypeName(column)} into DateTime.");
+                    default:
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnTypeName(column)} into DateTime.");
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
         }
 
         /// <inheritdoc />
+        TimeSpan GetTimeSpan(int ordinal)
+        {
+            return GetNullableTimeSpan(ordinal) ?? throw new SqlNullValueException();
+        }
+
+        /// <inheritdoc />
+        TimeSpan? GetNullableTimeSpan(int ordinal)
+        {
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
+            try
+            {
+                var column = ordinal + 1;
+                switch (_rs.getMetaData().getColumnType(column))
+                {
+                    case Types.TIME:
+                        var date_ = _rs.getDate(column);
+                        if (_rs.wasNull())
+                            return null;
+
+                        return TimeSpan.FromMilliseconds(date_.getTime());
+                    default:
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnTypeName(column)} into TimeSpan.");
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
+        }
+
+#if NET
+
+        /// <inheritdoc />
+        DateOnly GetDateOnly(int ordinal)
+        {
+            return GetNullableDateOnly(ordinal) ?? throw new SqlNullValueException();
+        }
+
+        /// <inheritdoc />
+        DateOnly? GetNullableDateOnly(int ordinal)
+        {
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
+            try
+            {
+                var column = ordinal + 1;
+                switch (_rs.getMetaData().getColumnType(column))
+                {
+                    case Types.DATE:
+                        var date_ = _rs.getDate(column);
+                        if (_rs.wasNull())
+                            return null;
+
+                        return DateOnly.FromDateTime(DateTimeOffset.FromUnixTimeMilliseconds(date_.getTime()).DateTime);
+                    case Types.TIMESTAMP:
+                        var timestamp_ = _rs.getTimestamp(column);
+                        if (_rs.wasNull())
+                            return null;
+
+                        return DateOnly.FromDateTime(DateTimeOffset.FromUnixTimeMilliseconds(timestamp_.getTime()).DateTime);
+                    case Types.VARCHAR:
+                    case Types.NVARCHAR:
+                    case Types.LONGVARCHAR:
+                    case Types.LONGNVARCHAR:
+                        var string_ = _rs.getString(column);
+                        if (_rs.wasNull())
+                            return null;
+
+                        // default to assuming the local timezone
+                        var styles = DateTimeStyles.AssumeLocal;
+                        if (_command.Connection?.ConnectionStringBuilder?.AssumeLocalTimeZone == false)
+                            styles = DateTimeStyles.AssumeUniversal;
+
+                        // parse as datetimeoffset, and then return dateonly value
+                        if (DateTimeOffset.TryParse(string_, null, styles, out var d))
+                            return DateOnly.FromDateTime(d.DateTime);
+
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnTypeName(column)} into DateOnly.");
+                    default:
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnTypeName(column)} into DateOnly.");
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
+        }
+
+        /// <inheritdoc />
+        TimeOnly GetTimeOnly(int ordinal)
+        {
+            return GetNullableTimeOnly(ordinal) ?? throw new SqlNullValueException();
+        }
+
+        /// <inheritdoc />
+        TimeOnly? GetNullableTimeOnly(int ordinal)
+        {
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= _rs.getMetaData().getColumnCount())
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
+            try
+            {
+                var column = ordinal + 1;
+                switch (_rs.getMetaData().getColumnType(column))
+                {
+                    case Types.TIME:
+                        var date_ = _rs.getDate(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return TimeOnly.FromDateTime(DateTimeOffset.FromUnixTimeMilliseconds(date_.getTime()).DateTime);
+                    case Types.TIMESTAMP:
+                        var timestamp_ = _rs.getTimestamp(column);
+                        if (_rs.wasNull())
+                            throw new SqlNullValueException();
+
+                        return TimeOnly.FromDateTime(DateTimeOffset.FromUnixTimeMilliseconds(timestamp_.getTime()).DateTime);
+                    default:
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnTypeName(column)} into TimeOnly.");
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
+        }
+
+#endif
+
+        /// <inheritdoc />
         public override decimal GetDecimal(int ordinal)
+        {
+            return GetNullableDecimal(ordinal) ?? throw new SqlNullValueException();
+        }
+
+        /// <summary>
+        /// Gets the <see cref="decimal?"/> value at the specified <paramref name="ordinal"/>.
+        /// </summary>
+        /// <param name="ordinal"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        /// <exception cref="SqlTypeException"></exception>
+        /// <exception cref="JdbcException"></exception>
+        decimal? GetNullableDecimal(int ordinal)
         {
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
@@ -928,23 +1314,23 @@ namespace IKVM.Jdbc.Data
                     case Types.DECIMAL:
                         var decimal_ = _rs.getBigDecimal(column);
                         if (_rs.wasNull())
-                            throw new SqlNullValueException();
+                            return null;
 
                         return decimal.Parse(decimal_.ToString());
                     case Types.DOUBLE:
                         var double_ = _rs.getDouble(column);
                         if (_rs.wasNull())
-                            throw new SqlNullValueException();
+                            return null;
 
                         return (decimal)double_;
                     case Types.FLOAT:
                         var float_ = _rs.getFloat(column);
                         if (_rs.wasNull())
-                            throw new SqlNullValueException();
+                            return null;
 
                         return (decimal)float_;
                     default:
-                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnType(column)} into Decimal.");
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnTypeName(column)} into Decimal.");
                 }
             }
             catch (SQLException e)
@@ -956,6 +1342,12 @@ namespace IKVM.Jdbc.Data
         /// <inheritdoc />
         public override double GetDouble(int ordinal)
         {
+            return GetNullableDouble(ordinal) ?? throw new SqlNullValueException();
+        }
+
+        /// <inheritdoc />
+        double? GetNullableDouble(int ordinal)
+        {
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
             if (ordinal >= _rs.getMetaData().getColumnCount())
@@ -969,17 +1361,17 @@ namespace IKVM.Jdbc.Data
                     case Types.DOUBLE:
                         var double_ = _rs.getDouble(column);
                         if (_rs.wasNull())
-                            throw new SqlNullValueException();
+                            return null;
 
                         return double_;
                     case Types.FLOAT:
                         var float_ = _rs.getFloat(column);
                         if (_rs.wasNull())
-                            throw new SqlNullValueException();
+                            return null;
 
                         return float_;
                     default:
-                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnType(column)} into Double.");
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnTypeName(column)} into Double.");
                 }
             }
             catch (SQLException e)
@@ -990,6 +1382,12 @@ namespace IKVM.Jdbc.Data
 
         /// <inheritdoc />
         public override float GetFloat(int ordinal)
+        {
+            return GetNullableFloat(ordinal) ?? throw new SqlNullValueException();
+        }
+
+        /// <inheritdoc />
+        float? GetNullableFloat(int ordinal)
         {
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
@@ -1004,11 +1402,11 @@ namespace IKVM.Jdbc.Data
                     case Types.FLOAT:
                         var float_ = _rs.getFloat(column);
                         if (_rs.wasNull())
-                            throw new SqlNullValueException();
+                            return null;
 
                         return float_;
                     default:
-                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnType(column)} into Single.");
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnTypeName(column)} into Single.");
                 }
             }
             catch (SQLException e)
@@ -1031,6 +1429,12 @@ namespace IKVM.Jdbc.Data
         /// <inheritdoc />
         public override short GetInt16(int ordinal)
         {
+            return GetNullableInt16(ordinal) ?? throw new SqlNullValueException();
+        }
+
+        /// <inheritdoc />
+        short? GetNullableInt16(int ordinal)
+        {
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
             if (ordinal >= _rs.getMetaData().getColumnCount())
@@ -1044,17 +1448,17 @@ namespace IKVM.Jdbc.Data
                     case Types.SMALLINT:
                         var short_ = _rs.getShort(column);
                         if (_rs.wasNull())
-                            throw new SqlNullValueException();
+                            return null;
 
                         return short_;
                     case Types.TINYINT:
                         var byte_ = _rs.getByte(column);
                         if (_rs.wasNull())
-                            throw new SqlNullValueException();
+                            return null;
 
                         return byte_;
                     default:
-                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnType(column)} into Int16.");
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnTypeName(column)} into Int16.");
                 }
             }
             catch (SQLException e)
@@ -1065,6 +1469,12 @@ namespace IKVM.Jdbc.Data
 
         /// <inheritdoc />
         public override int GetInt32(int ordinal)
+        {
+            return GetNullableInt32(ordinal) ?? throw new SqlNullValueException();
+        }
+
+        /// <inheritdoc />
+        int? GetNullableInt32(int ordinal)
         {
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
@@ -1079,23 +1489,23 @@ namespace IKVM.Jdbc.Data
                     case Types.INTEGER:
                         var int_ = _rs.getInt(column);
                         if (_rs.wasNull())
-                            throw new SqlNullValueException();
+                            return null;
 
                         return int_;
                     case Types.SMALLINT:
                         var short_ = _rs.getShort(column);
                         if (_rs.wasNull())
-                            throw new SqlNullValueException();
+                            return null;
 
                         return short_;
                     case Types.TINYINT:
                         var byte_ = _rs.getByte(column);
                         if (_rs.wasNull())
-                            throw new SqlNullValueException();
+                            return null;
 
                         return byte_;
                     default:
-                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnType(column)} into Int32.");
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnTypeName(column)} into Int32.");
                 }
             }
             catch (SQLException e)
@@ -1106,6 +1516,12 @@ namespace IKVM.Jdbc.Data
 
         /// <inheritdoc />
         public override long GetInt64(int ordinal)
+        {
+            return GetNullableInt64(ordinal) ?? throw new SqlNullValueException();
+        }
+
+        /// <inheritdoc />
+        long? GetNullableInt64(int ordinal)
         {
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
@@ -1120,29 +1536,29 @@ namespace IKVM.Jdbc.Data
                     case Types.BIGINT:
                         var long_ = _rs.getLong(column);
                         if (_rs.wasNull())
-                            throw new SqlNullValueException();
+                            return null;
 
                         return long_;
                     case Types.INTEGER:
                         var int_ = _rs.getInt(column);
                         if (_rs.wasNull())
-                            throw new SqlNullValueException();
+                            return null;
 
                         return int_;
                     case Types.SMALLINT:
                         var short_ = _rs.getShort(column);
                         if (_rs.wasNull())
-                            throw new SqlNullValueException();
+                            return null;
 
                         return short_;
                     case Types.TINYINT:
                         var byte_ = _rs.getByte(column);
                         if (_rs.wasNull())
-                            throw new SqlNullValueException();
+                            return null;
 
                         return byte_;
                     default:
-                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnType(column)} into Int64.");
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnTypeName(column)} into Int64.");
                 }
             }
             catch (SQLException e)
@@ -1183,7 +1599,7 @@ namespace IKVM.Jdbc.Data
 
                         return string_;
                     default:
-                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnType(column)} into String.");
+                        throw new SqlTypeException($"Could not convert column type {_rs.getMetaData().getColumnTypeName(column)} into String.");
                 }
             }
             catch (SQLException e)

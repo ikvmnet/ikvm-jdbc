@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 
 using java.sql;
 
@@ -14,10 +15,10 @@ namespace IKVM.Jdbc.Data
     public class JdbcConnection : DbConnection
     {
 
-        internal JdbcConnectionStringBuilder _connectionStringBuilder;
-        internal java.sql.Connection _connection;
+        internal JdbcConnectionStringBuilder? _connectionStringBuilder;
+        internal java.sql.Connection? _connection;
         readonly bool _leaveOpen;
-        internal JdbcTransaction _transaction;
+        internal JdbcTransaction? _transaction;
 
         /// <summary>
         /// Initializes a new instance.
@@ -74,10 +75,18 @@ namespace IKVM.Jdbc.Data
         /// <summary>
         /// Gets or sets the connection string.
         /// </summary>
+        internal JdbcConnectionStringBuilder? ConnectionStringBuilder => _connectionStringBuilder;
+
+        /// <summary>
+        /// Gets or sets the connection string.
+        /// </summary>
+#if NET
+        [AllowNull]
+#endif
         public override string ConnectionString
         {
-            get => _connectionStringBuilder?.ConnectionString;
-            set => SetConnectionString(value);
+            get => ConnectionStringBuilder?.ConnectionString ?? "";
+            set => SetConnectionString(value ?? "");
         }
 
         /// <summary>
@@ -103,7 +112,7 @@ namespace IKVM.Jdbc.Data
         /// <summary>
         /// Gets the current datasource.
         /// </summary>
-        public override string DataSource => _connection != null ? null : throw new JdbcException("Connection is not open.");
+        public override string DataSource => "";
 
         /// <summary>
         /// Gets the version of the database server if available.
@@ -118,6 +127,9 @@ namespace IKVM.Jdbc.Data
         {
             if (State != ConnectionState.Open)
                 throw new JdbcException("Connection must be open to change databases.");
+
+            if (_connection is null)
+                throw new InvalidOperationException();
 
             try
             {
@@ -137,6 +149,9 @@ namespace IKVM.Jdbc.Data
         {
             if (State == ConnectionState.Closed)
                 return;
+
+            if (_connection is null)
+                throw new InvalidOperationException();
 
             try
             {
@@ -190,7 +205,7 @@ namespace IKVM.Jdbc.Data
         /// Gets the current database transaction.
         /// </summary>
         /// <returns></returns>
-        public JdbcTransaction Transaction => _transaction;
+        public JdbcTransaction? Transaction => _transaction;
 
         /// <summary>
         /// Starts a new JDBC transaction by disabling auto-commit.

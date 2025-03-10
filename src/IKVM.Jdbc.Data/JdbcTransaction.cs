@@ -24,14 +24,17 @@ namespace IKVM.Jdbc.Data
         /// <param name="isolationLevel"></param>
         internal JdbcTransaction(JdbcConnection connection, IsolationLevel isolationLevel)
         {
-            this._connection = connection ?? throw new ArgumentNullException(nameof(connection));
+            _connection = connection ?? throw new ArgumentNullException(nameof(connection));
 
-            if (connection._connection.getAutoCommit() == false)
+            if (_connection._connection is null)
+                throw new InvalidOperationException();
+
+            if (_connection._connection.getAutoCommit() == false)
                 throw new JdbcException("A JDBC transaction is already open.");
             else
             {
                 // set isolation level
-                connection._connection.setTransactionIsolation(isolationLevel switch
+                _connection._connection.setTransactionIsolation(isolationLevel switch
                 {
                     IsolationLevel.Unspecified => java.sql.Connection.TRANSACTION_NONE,
                     IsolationLevel.Chaos => java.sql.Connection.TRANSACTION_NONE,
@@ -43,7 +46,7 @@ namespace IKVM.Jdbc.Data
                 });
 
                 // disable auto commit
-                connection._connection.setAutoCommit(false);
+                _connection._connection.setAutoCommit(false);
             }
         }
 
@@ -58,13 +61,14 @@ namespace IKVM.Jdbc.Data
         /// <summary>
         /// Gets the isolation level of the current transaction.
         /// </summary>
-        public override IsolationLevel IsolationLevel => _connection._connection.getTransactionIsolation() switch
+        public override IsolationLevel IsolationLevel => _connection._connection?.getTransactionIsolation() switch
         {
             java.sql.Connection.TRANSACTION_NONE => IsolationLevel.Unspecified,
             java.sql.Connection.TRANSACTION_READ_COMMITTED => IsolationLevel.ReadCommitted,
             java.sql.Connection.TRANSACTION_READ_UNCOMMITTED => IsolationLevel.ReadUncommitted,
             java.sql.Connection.TRANSACTION_REPEATABLE_READ => IsolationLevel.RepeatableRead,
             java.sql.Connection.TRANSACTION_SERIALIZABLE => IsolationLevel.Serializable,
+            null => throw new InvalidOperationException(),
             _ => throw new JdbcException($"Unrecognized transaction value.")
         };
 
@@ -76,6 +80,9 @@ namespace IKVM.Jdbc.Data
         {
             if (_connection.State != ConnectionState.Open)
                 throw new JdbcException("Connection must be open commit a transaction.");
+
+            if (_connection._connection is null)
+                throw new InvalidOperationException();
 
             try
             {
@@ -97,6 +104,9 @@ namespace IKVM.Jdbc.Data
             if (_connection.State != ConnectionState.Open)
                 throw new JdbcException("Connection must be open commit a transaction.");
 
+            if (_connection._connection is null)
+                throw new InvalidOperationException();
+
             try
             {
                 _connection._connection.rollback();
@@ -112,13 +122,16 @@ namespace IKVM.Jdbc.Data
         #region SavePoints
 
         /// <inheritdoc />
-        public override bool SupportsSavepoints => _connection._connection.getMetaData().supportsSavepoints();
+        public override bool SupportsSavepoints => _connection._connection?.getMetaData()?.supportsSavepoints() ?? throw new InvalidOperationException();
 
         /// <inheritdoc />
         public override void Save(string savepointName)
         {
             if (_connection.State != ConnectionState.Open)
                 throw new JdbcException("Connection must be open commit a transaction.");
+
+            if (_connection._connection is null)
+                throw new InvalidOperationException();
 
             try
             {
@@ -139,6 +152,9 @@ namespace IKVM.Jdbc.Data
             if (_savepoints.TryGetValue(savepointName, out var savepoint) == false)
                 throw new JdbcException("Unknown save point name.");
 
+            if (_connection._connection is null)
+                throw new InvalidOperationException();
+
             try
             {
                 _connection._connection.rollback(savepoint);
@@ -157,6 +173,9 @@ namespace IKVM.Jdbc.Data
 
             if (_savepoints.TryGetValue(savepointName, out var savepoint) == false)
                 throw new JdbcException("Unknown save point name.");
+
+            if (_connection._connection is null)
+                throw new InvalidOperationException();
 
             try
             {
