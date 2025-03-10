@@ -7,6 +7,9 @@ using java.io;
 namespace IKVM.Jdbc.Data
 {
 
+    /// <summary>
+    /// Implementation of a <see cref="Stream"/> that reads from a Java <see cref="InputStream"/>.
+    /// </summary>
     class JdbcInputStream : Stream
     {
 
@@ -48,7 +51,7 @@ namespace IKVM.Jdbc.Data
         public override long Position
         {
             get => _position;
-            set => throw new NotSupportedException();
+            set => Seek(value, SeekOrigin.Begin);
         }
 
         /// <inheritdoc />

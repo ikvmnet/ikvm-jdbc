@@ -7,6 +7,9 @@ using java.sql;
 namespace IKVM.Jdbc.Data
 {
 
+    /// <summary>
+    /// Implementation of <see cref="Stream"/> that reads data from a <see cref="Blob"/>.
+    /// </summary>
     class JdbcBlobInputStream : Stream
     {
 
