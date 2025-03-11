@@ -57,9 +57,8 @@ jobs:
     - name: NuGet Restore
       run: dotnet restore IKVM.Jdbc.sln
     - name: Build
-      shell: pwsh
       run: |
-        dotnet msbuild /m /bl `
+        dotnet msbuild /m /bl \
           /p:Configuration="Release" \
           /p:Platform="Any CPU" \
           /p:PreReleaseLabel=${GitVersion_PreReleaseLabel} \
