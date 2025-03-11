@@ -60,17 +60,19 @@ jobs:
       shell: pwsh
       run: |
         dotnet msbuild /m /bl `
-          /p:Configuration="Release" `
-          /p:Platform="Any CPU" `
-          /p:Version=${env:GitVersion_FullSemVer} `
-          /p:AssemblyVersion=${env:GitVersion_AssemblySemVer} `
-          /p:InformationalVersion=${env:GitVersion_InformationalVersion} `
-          /p:FileVersion=${env:GitVersion_AssemblySemFileVer} `
-          /p:PackageVersion=${env:GitVersion_NuGetVersionV2} `
-          /p:RepositoryUrl="${env:GITHUB_SERVER_URL}/${env:GITHUB_REPOSITORY}.git" `
-          /p:PackageProjectUrl="${env:GITHUB_SERVER_URL}/${env:GITHUB_REPOSITORY}" `
-          /p:BuildInParallel=true `
-          /p:ContinuousIntegrationBuild=true `
+          /p:Configuration="Release" \
+          /p:Platform="Any CPU" \
+          /p:PreReleaseLabel=${GitVersion_PreReleaseLabel} \
+          /p:PreReleaseNumber=${GitVersion_WeightedPreReleaseNumber} \
+          /p:Version=${GitVersion_FullSemVer} \
+          /p:AssemblyVersion=${GitVersion_AssemblySemVer} \
+          /p:InformationalVersion=${GitVersion_InformationalVersion} \
+          /p:FileVersion=${GitVersion_AssemblySemFileVer} \
+          /p:PackageVersion=${GitVersion_FullSemVer} \
+          /p:RepositoryUrl="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git" \
+          /p:PackageProjectUrl="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" \
+          /p:BuildInParallel=true \
+          /p:ContinuousIntegrationBuild=true \
           IKVM.Jdbc.dist.msbuildproj
     - name: Upload MSBuild Log
       if: ${{ always() }}
