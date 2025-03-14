@@ -213,7 +213,7 @@ namespace IKVM.Jdbc.Data
                     b.Append(", ");
             }
             b.Append(")");
-            b.Append("}");
+            b.Append(" }");
 
             return b.ToString();
         }
