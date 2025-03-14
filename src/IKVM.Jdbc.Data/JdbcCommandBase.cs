@@ -161,6 +161,11 @@ namespace IKVM.Jdbc.Data
         protected override DbTransaction? DbTransaction { get; set; }
 
         /// <summary>
+        /// Indicates that the JDBC <see cref="Statement.RETURN_GENERATED_KEYS" /> value will be used to retrieve an extra result set.
+        /// </summary>
+        public bool ReturnGeneratedKeys { get; set; }
+
+        /// <summary>
         /// Creates a new instance of a <see cref="DbParameter"/> object.
         /// </summary>
         /// <returns></returns>
@@ -188,6 +193,10 @@ namespace IKVM.Jdbc.Data
                 flag |= JdbcCommandExtensionFlag.GetGeneratedKeys;
                 text = text.Remove(text.Length - getGeneratedKeysText.Length, getGeneratedKeysText.Length);
             }
+
+            // can be set explicitly on the command
+            if (ReturnGeneratedKeys)
+                flag |= JdbcCommandExtensionFlag.GetGeneratedKeys;
 
             return text;
         }
