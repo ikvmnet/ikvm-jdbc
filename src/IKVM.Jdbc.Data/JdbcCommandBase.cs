@@ -65,6 +65,7 @@ namespace IKVM.Jdbc.Data
         readonly object _syncRoot = new object();
         readonly JdbcParameterCollection _parameters = new JdbcParameterCollection();
         JdbcConnection? _connection;
+        CommandType _commandType = CommandType.Text;
         string? _commandText;
         PreparedStatement? _prepared;
         Statement? _executing;
@@ -102,7 +103,18 @@ namespace IKVM.Jdbc.Data
         /// <summary>
         /// Gets or sets how the <see cref="CommandText"/> property is interpreted.
         /// </summary>
-        public override CommandType CommandType { get; set; } = CommandType.Text;
+        public override CommandType CommandType
+        {
+            get => _commandType;
+            set
+            {
+                using (new ExecutingLock(this))
+                {
+                    _prepared = null;
+                    _commandType = value;
+                }
+            }
+        }
 
         /// <summary>
         /// Gets or sets the text command to run against the data source.
@@ -113,7 +125,14 @@ namespace IKVM.Jdbc.Data
         public override string CommandText
         {
             get => _commandText ?? "";
-            set => _commandText = value;
+            set
+            {
+                using (new ExecutingLock(this))
+                {
+                    _prepared = null;
+                    _commandText = value;
+                }
+            }
         }
 
         /// <summary>
