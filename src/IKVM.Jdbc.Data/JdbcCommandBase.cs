@@ -17,7 +17,10 @@ namespace IKVM.Jdbc.Data
     public abstract partial class JdbcCommandBase : DbCommand
     {
 
-        struct ExecutingLock : IDisposable
+        /// <summary>
+        /// Manages locks around execution.
+        /// </summary>
+        readonly struct ExecutingLock : IDisposable
         {
 
             readonly JdbcCommandBase _command;
