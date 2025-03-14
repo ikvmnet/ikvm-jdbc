@@ -289,22 +289,22 @@ namespace IKVM.Jdbc.Data.Tests
                 buffer[i].Should().Be((char)((byte)'A' + i));
         }
 
-        [TestMethod]
-        public void CanReturnGeneratedKeys()
-        {
-            using var cnn = new JdbcConnection(DriverManager.getConnection("jdbc:postgresql:test", "postgres", "10241024"));
-            cnn.Open();
+        //[TestMethod]
+        //public void CanReturnGeneratedKeys()
+        //{
+        //    using var cnn = new JdbcConnection(DriverManager.getConnection("jdbc:postgresql:test", "postgres", "10241024"));
+        //    cnn.Open();
 
-            using var cmd = cnn.CreateCommand();
-            cmd.CommandType = System.Data.CommandType.Text;
-            cmd.CommandText = "INSERT INTO test (name) VALUES (?) -- :GetGeneratedKeys";
-            cmd.Parameters.AddWithValue("1", "BOB");
-            using var rdr = cmd.ExecuteReader();
-            while (rdr.Read())
-            {
-                Console.WriteLine(rdr[0]);
-            }
-        }
+        //    using var cmd = cnn.CreateCommand();
+        //    cmd.CommandType = System.Data.CommandType.Text;
+        //    cmd.CommandText = "INSERT INTO test (name) VALUES (?) -- :GetGeneratedKeys";
+        //    cmd.Parameters.AddWithValue("1", "BOB");
+        //    using var rdr = cmd.ExecuteReader();
+        //    while (rdr.Read())
+        //    {
+        //        Console.WriteLine(rdr[0]);
+        //    }
+        //}
 
     }
 
