@@ -14,8 +14,53 @@ namespace IKVM.Jdbc.Data
     /// <summary>
     /// Represents a SQL statement or stored procedure to execute against a <see cref="JdbcConnection"/>.
     /// </summary>
-    public abstract class JdbcCommandBase : DbCommand
+    public abstract partial class JdbcCommandBase : DbCommand
     {
+
+        struct ExecutingLock : IDisposable
+        {
+
+            readonly JdbcCommandBase _command;
+
+            /// <summary>
+            /// Initializes a new instance.
+            /// </summary>
+            /// <param name="command"></param>
+            /// <exception cref="ArgumentNullException"></exception>
+            public ExecutingLock(JdbcCommandBase command)
+            {
+                _command = command ?? throw new ArgumentNullException(nameof(command));
+                Monitor.Enter(_command._syncRoot);
+
+                if (_command._executing != null)
+                    throw new JdbcException("The command is already executing a statement.");
+            }
+
+            /// <summary>
+            /// Exits the lock.
+            /// </summary>
+            public void Exit()
+            {
+                Monitor.Exit(_command._syncRoot);
+            }
+
+            /// <summary>
+            /// Enters the lock an additional time.
+            /// </summary>
+            public void Enter()
+            {
+                Monitor.Enter(_command._syncRoot);
+            }
+
+            /// <summary>
+            /// Releases the lock.
+            /// </summary>
+            public void Dispose()
+            {
+                Monitor.Exit(_command._syncRoot);
+            }
+
+        }
 
         readonly object _syncRoot = new object();
         readonly JdbcParameterCollection _parameters = new JdbcParameterCollection();
@@ -42,44 +87,16 @@ namespace IKVM.Jdbc.Data
         }
 
         /// <summary>
-        /// Executes the action if not already executing.
-        /// </summary>
-        /// <param name="action"></param>
-        /// <exception cref="JdbcException"></exception>
-        void ExecutingLock(Action action)
-        {
-            lock (_syncRoot)
-            {
-                if (_executing != null)
-                    throw new JdbcException("The command is already executing a statement.");
-
-                action();
-            }
-        }
-
-        /// <summary>
-        /// Executes the action if not already executing.
-        /// </summary>
-        /// <param name="func"></param>
-        /// <exception cref="JdbcException"></exception>
-        T ExecutingLock<T>(Func<T> func)
-        {
-            lock (_syncRoot)
-            {
-                if (_executing != null)
-                    throw new JdbcException("The command is already executing a statement.");
-
-                return func();
-            }
-        }
-
-        /// <summary>
         /// Gets or sets the database connection.
         /// </summary>
         protected override DbConnection? DbConnection
         {
             get => _connection;
-            set => ExecutingLock(() => _connection = (JdbcConnection?)value);
+            set
+            {
+                using (new ExecutingLock(this))
+                    _connection = (JdbcConnection?)value;
+            }
         }
 
         /// <summary>
@@ -137,24 +154,47 @@ namespace IKVM.Jdbc.Data
         }
 
         /// <summary>
+        /// Extracts any JDBC command extension flags from the command text.
+        /// </summary>
+        /// <param name="text"></param>
+        /// <param name="flag"></param>
+        /// <returns></returns>
+        string ExtractCommandExtension(string text, out JdbcCommandExtensionFlag flag)
+        {
+            flag = JdbcCommandExtensionFlag.None;
+            text = text.TrimEnd();
+            var getGeneratedKeysText = "-- :GetGeneratedKeys";
+            if (text.EndsWith(getGeneratedKeysText, StringComparison.OrdinalIgnoreCase))
+            {
+                flag |= JdbcCommandExtensionFlag.GetGeneratedKeys;
+                text = text.Remove(text.Length - getGeneratedKeysText.Length, getGeneratedKeysText.Length);
+            }
+
+            return text;
+        }
+
+        /// <summary>
         /// Builds the JDBC escape string for a stored procedure call.
         /// </summary>
         /// <returns></returns>
-        string? BuildJdbcStoredProcedureCallString()
+        string? BuildJdbcStoredProcedureCallString(string text)
         {
-            var b = new StringBuilder("{{ ");
+            var b = new StringBuilder("{ ");
 
             if (_parameters.Any(i => i.Direction == ParameterDirection.ReturnValue))
                 b.Append("? = ");
 
+            b.Append("call ");
+            b.Append(text);
+            b.Append("(");
             for (int i = 0; i < _parameters.Count; i++)
             {
                 b.Append("?");
                 if (i < _parameters.Count - 1)
                     b.Append(", ");
             }
-
-            b.Append(" }}");
+            b.Append(")");
+            b.Append("}");
 
             return b.ToString();
         }
@@ -164,7 +204,20 @@ namespace IKVM.Jdbc.Data
         /// </summary>
         public override void Prepare()
         {
-            ExecutingLock(() =>
+            var type = CommandType;
+            var text = ExtractCommandExtension(CommandText, out var flags);
+
+            // always prepare if we're going to use parameters
+            var hasAutoGeneratedKeys = (flags & JdbcCommandExtensionFlag.GetGeneratedKeys) != 0;
+            Prepare(type, text, hasAutoGeneratedKeys);
+        }
+
+        /// <summary>
+        /// Creates a prepared (or compiled) version of the command on the data source.
+        /// </summary>
+        void Prepare(CommandType type, string text, bool hasAutoGeneratedKeys)
+        {
+            using (new ExecutingLock(this))
             {
                 if (_connection == null)
                     throw new JdbcException("Connection must be available.");
@@ -180,13 +233,16 @@ namespace IKVM.Jdbc.Data
 
                 try
                 {
-                    switch (CommandType)
+                    switch (type)
                     {
                         case CommandType.Text:
-                            _prepared = _connection._connection.prepareStatement(CommandText);
+                            if (hasAutoGeneratedKeys)
+                                _prepared = _connection._connection.prepareStatement(text, Statement.RETURN_GENERATED_KEYS);
+                            else
+                                _prepared = _connection._connection.prepareStatement(text);
                             break;
                         case CommandType.StoredProcedure:
-                            _prepared = _connection._connection.prepareCall(BuildJdbcStoredProcedureCallString());
+                            _prepared = _connection._connection.prepareCall(BuildJdbcStoredProcedureCallString(text));
                             break;
                         case CommandType.TableDirect:
                             throw new NotImplementedException();
@@ -196,7 +252,7 @@ namespace IKVM.Jdbc.Data
                 {
                     throw new JdbcException(e);
                 }
-            });
+            }
         }
 
         /// <summary>
@@ -237,7 +293,7 @@ namespace IKVM.Jdbc.Data
         /// <returns></returns>
         public override int ExecuteNonQuery()
         {
-            return ExecutingLock(() =>
+            using (var lck = new ExecutingLock(this))
             {
                 if (_connection == null)
                     throw new JdbcException("Connection must be available.");
@@ -250,12 +306,16 @@ namespace IKVM.Jdbc.Data
 
                 try
                 {
+                    var type = CommandType;
+                    var text = ExtractCommandExtension(CommandText, out var flags);
+
                     // always prepare if we're going to use parameters
-                    if (_parameters.Count > 0)
-                        Prepare();
+                    var hasAutoGeneratedKeys = (flags & JdbcCommandExtensionFlag.GetGeneratedKeys) != 0;
+                    if (hasAutoGeneratedKeys || _parameters.Count > 0)
+                        Prepare(type, text, hasAutoGeneratedKeys);
 
                     // if we're doing an implicit return value for a stored procedure, it is always index 0, and everything is offset
-                    var offset = CommandType == CommandType.StoredProcedure ? 1 : 0;
+                    var offset = type == CommandType.StoredProcedure ? 1 : 0;
 
                     if (_prepared is not null)
                     {
@@ -268,7 +328,7 @@ namespace IKVM.Jdbc.Data
                             _executing = _prepared;
 
                             // release lock while executing, but reattain upon completion
-                            Monitor.Exit(_syncRoot);
+                            lck.Exit();
                             try
                             {
                                 _prepared.setQueryTimeout(CommandTimeout);
@@ -276,7 +336,7 @@ namespace IKVM.Jdbc.Data
                             }
                             finally
                             {
-                                Monitor.Enter(_syncRoot);
+                                lck.Enter();
                             }
 
                             return _prepared.getUpdateCount();
@@ -294,16 +354,16 @@ namespace IKVM.Jdbc.Data
                             _executing.setQueryTimeout(CommandTimeout);
 
                             // release lock while executing, but reattain upon completion
-                            Monitor.Exit(_syncRoot);
+                            lck.Exit();
                             try
                             {
-                                switch (CommandType)
+                                switch (type)
                                 {
                                     case CommandType.Text:
-                                        _executing.execute(CommandText);
+                                        _executing.execute(text);
                                         break;
                                     case CommandType.StoredProcedure:
-                                        _executing.execute(BuildJdbcStoredProcedureCallString());
+                                        _executing.execute(BuildJdbcStoredProcedureCallString(text));
                                         break;
                                     case CommandType.TableDirect:
                                         throw new NotImplementedException();
@@ -311,7 +371,7 @@ namespace IKVM.Jdbc.Data
                             }
                             finally
                             {
-                                Monitor.Enter(_syncRoot);
+                                lck.Enter();
                             }
 
                             return _executing.getUpdateCount();
@@ -328,7 +388,7 @@ namespace IKVM.Jdbc.Data
                 {
                     throw new JdbcException(e);
                 }
-            });
+            }
         }
 
         /// <summary>
@@ -352,7 +412,7 @@ namespace IKVM.Jdbc.Data
         /// <returns></returns>
         protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)
         {
-            return ExecutingLock(() =>
+            using (var lck = new ExecutingLock(this))
             {
                 if (_connection == null)
                     throw new JdbcException("Connection must be available.");
@@ -365,12 +425,16 @@ namespace IKVM.Jdbc.Data
 
                 try
                 {
+                    var type = CommandType;
+                    var text = ExtractCommandExtension(CommandText, out var flags);
+
                     // always prepare if we're going to use parameters
-                    if (_parameters.Count > 0)
-                        Prepare();
+                    var hasAutoGeneratedKeys = (flags & JdbcCommandExtensionFlag.GetGeneratedKeys) != 0;
+                    if (hasAutoGeneratedKeys || _parameters.Count > 0)
+                        Prepare(type, text, hasAutoGeneratedKeys);
 
                     // if we're doing an implicit return value for a stored procedure, it is always index 0, adn everything is offset
-                    var offset = CommandType == CommandType.StoredProcedure ? 1 : 0;
+                    var offset = type == CommandType.StoredProcedure ? 1 : 0;
 
                     if (_prepared is not null)
                     {
@@ -379,24 +443,22 @@ namespace IKVM.Jdbc.Data
 
                         try
                         {
-                            // mark statement as excuting
+                            // mark statement as executing
                             _executing = _prepared;
 
-                            ResultSet rs;
-
                             // release lock while executing, but reattain upon completion
-                            Monitor.Exit(_syncRoot);
+                            lck.Exit();
                             try
                             {
                                 _prepared.setQueryTimeout(CommandTimeout);
-                                rs = _prepared.executeQuery();
+                                _prepared.execute();
                             }
                             finally
                             {
-                                Monitor.Enter(_syncRoot);
+                                lck.Enter();
                             }
 
-                            return new JdbcDataReader((JdbcCommand)this, rs, _prepared.getUpdateCount());
+                            return new JdbcDataReader((JdbcCommand)this, _executing, hasAutoGeneratedKeys);
                         }
                         finally
                         {
@@ -410,19 +472,17 @@ namespace IKVM.Jdbc.Data
                             _executing = _connection._connection.createStatement();
                             _executing.setQueryTimeout(CommandTimeout);
 
-                            ResultSet? rs = null;
-
                             // release lock while executing, but reattain upon completion
-                            Monitor.Exit(_syncRoot);
+                            lck.Exit();
                             try
                             {
-                                switch (CommandType)
+                                switch (type)
                                 {
                                     case CommandType.Text:
-                                        rs = _executing.executeQuery(CommandText);
+                                        _executing.execute(CommandText);
                                         break;
                                     case CommandType.StoredProcedure:
-                                        rs = _executing.executeQuery(BuildJdbcStoredProcedureCallString());
+                                        _executing.execute(BuildJdbcStoredProcedureCallString(text));
                                         break;
                                     case CommandType.TableDirect:
                                         throw new NotImplementedException();
@@ -430,13 +490,10 @@ namespace IKVM.Jdbc.Data
                             }
                             finally
                             {
-                                Monitor.Enter(_syncRoot);
+                                lck.Enter();
                             }
 
-                            if (rs == null)
-                                throw new InvalidOperationException();
-
-                            return new JdbcDataReader((JdbcCommand)this, rs, _executing.getUpdateCount());
+                            return new JdbcDataReader((JdbcCommand)this, _executing, hasAutoGeneratedKeys);
                         }
                         finally
                         {
@@ -450,7 +507,7 @@ namespace IKVM.Jdbc.Data
                 {
                     throw new JdbcException(e);
                 }
-            });
+            }
         }
 
         /// <summary>

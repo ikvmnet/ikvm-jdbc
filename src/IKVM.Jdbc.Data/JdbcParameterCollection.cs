@@ -24,23 +24,44 @@ namespace IKVM.Jdbc.Data
         /// <summary>
         /// Adds the specified parameter to this collection.
         /// </summary>
-        /// <param name="item"></param>
-        public void Add(JdbcParameter item)
+        /// <param name="parameter"></param>
+        void ICollection<JdbcParameter>.Add(JdbcParameter parameter)
         {
-            base.Add(item);
+            Add(parameter);
+        }
+
+        /// <summary>
+        /// Adds the specified parameter to this collection.
+        /// </summary>
+        /// <param name="parameter"></param>
+        public JdbcParameter Add(JdbcParameter parameter)
+        {
+            base.Add(parameter);
+            return parameter;
+        }
+
+        /// <summary>
+        /// Adds a value to the end of the <see cref="JdbcParameterCollection"/>.
+        /// </summary>
+        /// <param name="parameterName"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public JdbcParameter AddWithValue(string parameterName, object value)
+        {
+            return Add(new JdbcParameter(parameterName, value));
         }
 
         /// <summary>
         /// Returns <c>true</c> if this collection contains the specified parameter.
         /// </summary>
-        /// <param name="item"></param>
+        /// <param name="parameter"></param>
         /// <returns></returns>
-        public bool Contains(JdbcParameter item)
+        public bool Contains(JdbcParameter parameter)
         {
-            if (item is null)
-                throw new ArgumentNullException(nameof(item));
+            if (parameter is null)
+                throw new ArgumentNullException(nameof(parameter));
 
-            return base.Contains(item);
+            return base.Contains(parameter);
         }
 
         /// <summary>

@@ -1,16 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using com.sun.org.apache.bcel.@internal.util;
 
 using FluentAssertions;
 
 using IKVM.Jdbc.Data.Internal;
 
-using java.awt.color;
+using java.sql;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -20,6 +14,12 @@ namespace IKVM.Jdbc.Data.Tests
     [TestClass]
     public class JdbcCommandTests
     {
+
+        static JdbcCommandTests()
+        {
+            ikvm.runtime.Startup.addBootClassPathAssembly(typeof(org.sqlite.JDBC).Assembly);
+            ikvm.runtime.Startup.addBootClassPathAssembly(typeof(org.postgresql.jdbc.PgConnection).Assembly);
+        }
 
         JdbcConnection CreateTestConnection()
         {
@@ -287,6 +287,23 @@ namespace IKVM.Jdbc.Data.Tests
 
             for (int i = 0; i < 26; i++)
                 buffer[i].Should().Be((char)((byte)'A' + i));
+        }
+
+        [TestMethod]
+        public void CanReturnGeneratedKeys()
+        {
+            using var cnn = new JdbcConnection(DriverManager.getConnection("jdbc:postgresql:test", "postgres", "10241024"));
+            cnn.Open();
+
+            using var cmd = cnn.CreateCommand();
+            cmd.CommandType = System.Data.CommandType.Text;
+            cmd.CommandText = "INSERT INTO test (name) VALUES (?) -- :GetGeneratedKeys";
+            cmd.Parameters.AddWithValue("1", "BOB");
+            using var rdr = cmd.ExecuteReader();
+            while (rdr.Read())
+            {
+                Console.WriteLine(rdr[0]);
+            }
         }
 
     }

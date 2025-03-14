@@ -9,6 +9,26 @@ namespace IKVM.Jdbc.Data
     public class JdbcParameter : DbParameter
     {
 
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        public JdbcParameter()
+        {
+            Direction = ParameterDirection.Input;
+        }
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="parameterName"></param>
+        /// <param name="value"></param>
+        public JdbcParameter(string parameterName, object value) :
+            this()
+        {
+            ParameterName = parameterName;
+            Value = value;
+        }
+
         /// <inheritdoc />
 #if NET
         [AllowNull]
