@@ -191,7 +191,7 @@ namespace IKVM.Jdbc.Data
                     Types.NCHAR => typeof(string),
                     Types.NCLOB => typeof(string),
                     Types.NULL => typeof(object),
-                    Types.NUMERIC => throw new NotImplementedException(),
+                    Types.NUMERIC => typeof(decimal),
                     Types.NVARCHAR => typeof(string),
                     Types.OTHER => throw new NotSupportedException(),
                     Types.REAL => typeof(float),
@@ -336,6 +336,7 @@ namespace IKVM.Jdbc.Data
                         return ResultSet.wasNull() ? DBNull.Value : DateOnly.FromDateTime(DateTimeOffset.FromUnixTimeMilliseconds(date_.getTime()).Date);
 #endif
                     case Types.DECIMAL:
+                    case Types.NUMERIC:
                         var decimal_ = ResultSet.getBigDecimal(column);
                         return ResultSet.wasNull() ? DBNull.Value : decimal.Parse(decimal_.toString());
                     case Types.DISTINCT:
@@ -369,8 +370,6 @@ namespace IKVM.Jdbc.Data
                         return ResultSet.wasNull() ? DBNull.Value : nclob_;
                     case Types.NULL:
                         return DBNull.Value;
-                    case Types.NUMERIC:
-                        throw new NotImplementedException();
                     case Types.NVARCHAR:
                         var nvarchar_ = ResultSet.getString(column);
                         return ResultSet.wasNull() ? DBNull.Value : nvarchar_;
@@ -1371,6 +1370,7 @@ namespace IKVM.Jdbc.Data
                 switch (ResultSet.getMetaData().getColumnType(column))
                 {
                     case Types.DECIMAL:
+                    case Types.NUMERIC:
                         var decimal_ = ResultSet.getBigDecimal(column);
                         if (ResultSet.wasNull())
                             return null;
