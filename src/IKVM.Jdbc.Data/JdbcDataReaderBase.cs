@@ -287,6 +287,27 @@ namespace IKVM.Jdbc.Data
         }
 
         /// <summary>
+        /// Calls 'getObject' on the underlying <see cref="ResultSet"/>, simply returning the underlying Java object.
+        /// </summary>
+        /// <param name="ordinal"></param>
+        /// <returns></returns>
+        public object? GetJavaObject(int ordinal)
+        {
+            var column = ordinal + 1;
+            return ResultSet.getObject(column);
+        }
+
+        /// <summary>
+        /// Calls 'getObject' on the underlying <see cref="ResultSet"/>, simply returning the underlying Java object.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public object? GetJavaObject(string name)
+        {
+            return ResultSet.getObject(name);
+        }
+
+        /// <summary>
         /// Gets the value of the specified column as an instance of <see cref="object"/>.
         /// </summary>
         /// <param name="column"></param>
