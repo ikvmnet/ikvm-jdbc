@@ -9,6 +9,9 @@ using System.IO;
 using System.Xml.Linq;
 
 using java.sql;
+using java.time;
+
+using javax.management;
 
 namespace IKVM.Jdbc.Data
 {
@@ -328,13 +331,8 @@ namespace IKVM.Jdbc.Data
                     case Types.DATALINK:
                         throw new NotSupportedException();
                     case Types.DATE:
-#if NETFRAMEWORK
                         var date_ = ResultSet.getDate(column);
-                        return ResultSet.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(date_.getTime()).Date;
-#else
-                        var date_ = ResultSet.getDate(column);
-                        return ResultSet.wasNull() ? DBNull.Value : DateOnly.FromDateTime(DateTimeOffset.FromUnixTimeMilliseconds(date_.getTime()).Date);
-#endif
+                        return ResultSet.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(date_.getTime()).DateTime;
                     case Types.DECIMAL:
                         var decimal_ = ResultSet.getBigDecimal(column);
                         return ResultSet.wasNull() ? DBNull.Value : decimal.Parse(decimal_.toString());
@@ -405,9 +403,9 @@ namespace IKVM.Jdbc.Data
                         var timestamp_ = ResultSet.getTimestamp(column);
                         return ResultSet.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(timestamp_.getTime()).DateTime;
                     case Types.TIMESTAMP_WITH_TIMEZONE:
-                        throw new NotImplementedException();
                     case Types.TIME_WITH_TIMEZONE:
-                        throw new NotImplementedException();
+                        var offsetdatetime_ = (OffsetDateTime?)ResultSet.getObject(column, typeof(OffsetDateTime));
+                        return ResultSet.wasNull() || offsetdatetime_ is null ? DBNull.Value : new DateTimeOffset(offsetdatetime_.getYear(), offsetdatetime_.getMonthValue(), offsetdatetime_.getDayOfMonth(), offsetdatetime_.getHour(), offsetdatetime_.getMinute(), offsetdatetime_.getSecond(), TimeSpan.FromSeconds(offsetdatetime_.getOffset().getTotalSeconds()));
                     case Types.TINYINT:
                         var tinyint_ = ResultSet.getByte(column);
                         return ResultSet.wasNull() ? DBNull.Value : tinyint_;
@@ -1185,16 +1183,20 @@ namespace IKVM.Jdbc.Data
                         if (ResultSet.wasNull())
                             return null;
 
-                        // default to assuming the local timezone
-                        var styles = DateTimeStyles.AssumeLocal;
-                        if (_command.Connection?.ConnectionStringBuilder?.AssumeLocalTimeZone == false)
-                            styles = DateTimeStyles.AssumeUniversal;
-
                         // parse as datetimeoffset, and then return dateonly value
-                        if (DateTimeOffset.TryParse(string_, null, styles, out var d))
+                        if (DateTimeOffset.TryParse(string_, null, DateTimeStyles.AssumeLocal, out var d))
                             return d.DateTime;
 
                         throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateTime.");
+
+                    case Types.TIMESTAMP_WITH_TIMEZONE:
+                    case Types.TIME_WITH_TIMEZONE:
+                        var datetime_ = (OffsetDateTime?)ResultSet.getObject(column, typeof(OffsetDateTime));
+                        if (ResultSet.wasNull() || datetime_ is null)
+                            return null;
+
+                        return new DateTime(datetime_.getYear(), datetime_.getMonthValue(), datetime_.getDayOfMonth());
+
                     default:
                         throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateTime.");
                 }
@@ -1281,16 +1283,18 @@ namespace IKVM.Jdbc.Data
                         if (ResultSet.wasNull())
                             return null;
 
-                        // default to assuming the local timezone
-                        var styles = DateTimeStyles.AssumeLocal;
-                        if (_command.Connection?.ConnectionStringBuilder?.AssumeLocalTimeZone == false)
-                            styles = DateTimeStyles.AssumeUniversal;
-
                         // parse as datetimeoffset, and then return dateonly value
-                        if (DateTimeOffset.TryParse(string_, null, styles, out var d))
+                        if (DateTimeOffset.TryParse(string_, null, DateTimeStyles.AssumeLocal, out var d))
                             return DateOnly.FromDateTime(d.DateTime);
 
                         throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateOnly.");
+                    case Types.TIMESTAMP_WITH_TIMEZONE:
+                    case Types.TIME_WITH_TIMEZONE:
+                        var datetime_ = (OffsetDateTime?)ResultSet.getObject(column, typeof(OffsetDateTime));
+                        if (ResultSet.wasNull() || datetime_ is null)
+                            return null;
+
+                        return new DateOnly(datetime_.getYear(), datetime_.getMonthValue(), datetime_.getDayOfMonth());
                     default:
                         throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateOnly.");
                 }

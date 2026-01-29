@@ -1,4 +1,5 @@
-﻿using System.Data.Common;
+﻿using System;
+using System.Data.Common;
 
 namespace IKVM.Jdbc.Data
 {
@@ -10,54 +11,41 @@ namespace IKVM.Jdbc.Data
     {
 
         /// <summary>
-        /// Returns a new instance of <see cref="JdbcCommand"/>.
+        /// Gets the default instance.
         /// </summary>
-        /// <returns></returns>
+        public static JdbcProviderFactory Instance { get; } = new JdbcProviderFactory();
+
+        /// <inheritdoc />
         public override DbCommand CreateCommand()
         {
             return new JdbcCommand();
         }
 
-        /// <summary>
-        /// Returns a new instance of <see cref="JdbcCommandBuilder"/>.
-        /// </summary>
-        /// <returns></returns>
+        /// <inheritdoc />
         public override DbCommandBuilder CreateCommandBuilder()
         {
             return new JdbcCommandBuilder();
         }
 
-        /// <summary>
-        /// Returns a new instance of <see cref="JdbcConnection"/>.
-        /// </summary>
-        /// <returns></returns>
+        /// <inheritdoc />
         public override DbConnection CreateConnection()
         {
             return new JdbcConnection();
         }
 
-        /// <summary>
-        /// Returns a new instance of <see cref="JdbcConnectionStringBuilder"/>.
-        /// </summary>
-        /// <returns></returns>
+        /// <inheritdoc />
         public override DbConnectionStringBuilder CreateConnectionStringBuilder()
         {
-            return new JdbcConnectionStringBuilder();
+            throw new NotSupportedException(); 
         }
 
-        /// <summary>
-        /// Returns a new instance of <see cref="JdbcDataAdapter"/>.
-        /// </summary>
-        /// <returns></returns>
+        /// <inheritdoc />
         public override DbDataAdapter CreateDataAdapter()
         {
             return new JdbcDataAdapter();
         }
 
-        /// <summary>
-        /// Returns a new instance of <see cref="JdbcParameter"/>.
-        /// </summary>
-        /// <returns></returns>
+        /// <inheritdoc />
         public override DbParameter CreateParameter()
         {
             return new JdbcParameter();

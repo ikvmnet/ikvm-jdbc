@@ -15,7 +15,8 @@ namespace IKVM.Jdbc.Data
     public class JdbcConnection : DbConnection
     {
 
-        internal JdbcConnectionStringBuilder? _connectionStringBuilder;
+        internal string? _url;
+        internal IReadOnlyDictionary<string, string>? _properties;
         internal java.sql.Connection? _connection;
         readonly bool _leaveOpen;
         internal JdbcTransaction? _transaction;
@@ -33,26 +34,24 @@ namespace IKVM.Jdbc.Data
         /// </summary>
         /// <param name="url"></param>
         /// <param name="properties"></param>
-        public JdbcConnection(string url, IDictionary<string, string> properties) :
+        public JdbcConnection(string url, IReadOnlyDictionary<string, string>? properties = null) :
             this()
         {
             if (url is null)
                 throw new ArgumentNullException(nameof(url));
 
-            _connectionStringBuilder = new JdbcConnectionStringBuilder() { Url = url };
-
-            foreach (var kvp in properties)
-                _connectionStringBuilder.Add(kvp.Key, kvp.Value);
+            _url = url;
+            _properties = properties;
         }
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="connectionString"></param>
-        public JdbcConnection(string connectionString) :
-            this()
+        /// <param name="url"></param>
+        public JdbcConnection(string url) :
+            this(url, null)
         {
-            _connectionStringBuilder = new JdbcConnectionStringBuilder(connectionString);
+
         }
 
         /// <summary>
@@ -62,7 +61,7 @@ namespace IKVM.Jdbc.Data
         /// <param name="leaveOpen"></param>
         public JdbcConnection(Connection connection, bool leaveOpen = false)
         {
-            _connectionStringBuilder = new JdbcConnectionStringBuilder() { Url = connection.getMetaData().getURL() };
+            _url = connection.getMetaData().getURL();
             _connection = connection;
             _leaveOpen = leaveOpen;
         }
@@ -75,7 +74,12 @@ namespace IKVM.Jdbc.Data
         /// <summary>
         /// Gets or sets the connection string.
         /// </summary>
-        internal JdbcConnectionStringBuilder? ConnectionStringBuilder => _connectionStringBuilder;
+        internal string? Url => _url;
+
+        /// <summary>
+        /// Gets or sets the connection properties.
+        /// </summary>
+        public IReadOnlyDictionary<string, string>? Properties => _properties;
 
         /// <summary>
         /// Gets or sets the connection string.
@@ -85,22 +89,22 @@ namespace IKVM.Jdbc.Data
 #endif
         public override string ConnectionString
         {
-            get => ConnectionStringBuilder?.ConnectionString ?? "";
-            set => SetConnectionString(value ?? "");
+            get => _url ?? _connection?.getMetaData().getURL() ?? "";
+            set => SetUrl(value ?? "");
         }
 
         /// <summary>
-        /// Sets the connection string.
+        /// Sets the JDBC URL.
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="url"></param>
         /// <exception cref="JdbcException"></exception>
-        void SetConnectionString(string value)
+        void SetUrl(string url)
         {
             if (State != ConnectionState.Closed)
                 throw new JdbcException("Connection must be closed to update connection string.");
 
             // reset connection string
-            _connectionStringBuilder = new JdbcConnectionStringBuilder(value);
+            _url = url;
             _connection = null;
         }
 
@@ -183,17 +187,17 @@ namespace IKVM.Jdbc.Data
                 throw new JdbcException("Connection has already been opened.");
 
             // haven't configured the connection string
-            if (_connectionStringBuilder == null)
-                throw new JdbcException("Connection string has not been configured.");
+            if (_url == null)
+                throw new JdbcException("JDBC URL has not been configured.");
 
             try
             {
                 var props = new java.util.Properties();
-                foreach (KeyValuePair<string, object> entry in _connectionStringBuilder)
-                    if (string.Equals(entry.Key, "url", StringComparison.OrdinalIgnoreCase) == false)
-                        props.setProperty(entry.Key, entry.Value.ToString());
+                if (_properties is not null)
+                    foreach (var entry in _properties)
+                        props.setProperty(entry.Key, entry.Value);
 
-                _connection = DriverManager.getConnection(_connectionStringBuilder.Url, props);
+                _connection = DriverManager.getConnection(_url, props);
             }
             catch (SQLException e)
             {

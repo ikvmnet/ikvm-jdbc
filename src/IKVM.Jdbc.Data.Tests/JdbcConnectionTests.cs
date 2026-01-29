@@ -13,9 +13,14 @@ namespace IKVM.Jdbc.Data.Tests
     public class JdbcConnectionTests
     {
 
+        static JdbcConnectionTests()
+        {
+            GC.KeepAlive(typeof(org.sqlite.SQLiteConnection));
+        }
+
         JdbcConnection CreateTestConnection()
         {
-            return new JdbcConnection(org.sqlite.JDBC.createConnection("jdbc:sqlite:sample.db", new java.util.Properties()));
+            return new JdbcConnection("jdbc:sqlite:sample.db");
         }
 
         [TestMethod]

@@ -15,15 +15,18 @@ namespace IKVM.Jdbc.Data
     public class JdbcDataSource : DbDataSource
     {
 
-        readonly string _connectionString;
+        readonly string _url;
+        internal IReadOnlyDictionary<string, string>? _properties;
 
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
-        /// <param name="connectionString"></param>
-        public JdbcDataSource(string connectionString)
+        /// <param name="url"></param>
+        /// <param name="properties"></param>
+        public JdbcDataSource(string url) :
+            this(url, new Dictionary<string, string>())
         {
-            _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
+
         }
 
         /// <summary>
@@ -31,28 +34,22 @@ namespace IKVM.Jdbc.Data
         /// </summary>
         /// <param name="url"></param>
         /// <param name="properties"></param>
-        public JdbcDataSource(string url, IDictionary<string, string> properties)
+        public JdbcDataSource(string url, IReadOnlyDictionary<string, string> properties)
         {
             ArgumentNullException.ThrowIfNull(url);
             ArgumentNullException.ThrowIfNull(properties);
 
-            var _connectionStringBuilder = new JdbcConnectionStringBuilder() { Url = url };
-
-            // fill with properties
-            foreach (var kvp in properties)
-                _connectionStringBuilder.Add(kvp.Key, kvp.Value);
-
-            // convert to normal connection string
-            _connectionString = _connectionStringBuilder.ConnectionString;
+            _url = url;
+            _properties = properties;
         }
 
         /// <inheritdoc />
-        public override string ConnectionString => _connectionString;
+        public override string ConnectionString => _url;
 
         /// <inheritdoc />
         protected override DbConnection CreateDbConnection()
         {
-            return new JdbcConnection(_connectionString);
+            return new JdbcConnection(_url, _properties);
         }
 
     }
