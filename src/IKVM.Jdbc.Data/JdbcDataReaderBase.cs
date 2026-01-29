@@ -1,17 +1,20 @@
 ﻿using System;
 using System.Buffers;
+using System.Buffers.Binary;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Data.SqlTypes;
 using System.Globalization;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Xml.Linq;
 
+using java.io;
+using java.lang;
+using java.nio;
 using java.sql;
 using java.time;
-
-using javax.management;
 
 namespace IKVM.Jdbc.Data
 {
@@ -854,7 +857,7 @@ namespace IKVM.Jdbc.Data
                             int i = 0; // current read
 
                             // read up to buffer size, from buffer offset, or remaining space available, until end
-                            while ((i = stream.read(buffer, n + bufferOffset, Math.Min(DEFAULT_BUFFER_SIZE, buffer.Length - n))) != -1)
+                            while ((i = stream.read(buffer, n + bufferOffset, System.Math.Min(DEFAULT_BUFFER_SIZE, buffer.Length - n))) != -1)
                                 n += i;
 
                             return n;
@@ -918,7 +921,7 @@ namespace IKVM.Jdbc.Data
                                 int i = 0; // current read
 
                                 // read up to buffer size, or remaining space available, until end
-                                while ((i = stream.read(b, 0, Math.Min(DEFAULT_BUFFER_SIZE, buffer.Length - n))) != -1)
+                                while ((i = stream.read(b, 0, System.Math.Min(DEFAULT_BUFFER_SIZE, buffer.Length - n))) != -1)
                                 {
                                     b.AsSpan().Slice(0, i).CopyTo(buffer.Slice(n));
                                     n += i;
@@ -1072,7 +1075,7 @@ namespace IKVM.Jdbc.Data
                             int i = 0; // current read
 
                             // read up to buffer size, from buffer offset, or remaining space available, until end
-                            while ((i = stream.read(buffer, n + bufferOffset, Math.Min(DEFAULT_BUFFER_SIZE, buffer.Length - n))) != -1)
+                            while ((i = stream.read(buffer, n + bufferOffset, System.Math.Min(DEFAULT_BUFFER_SIZE, buffer.Length - n))) != -1)
                                 n += i;
 
                             return n;
@@ -1137,7 +1140,7 @@ namespace IKVM.Jdbc.Data
                                 int i = 0; // current read
 
                                 // read up to buffer size, or remaining space available, until end
-                                while ((i = stream.read(b, 0, Math.Min(DEFAULT_BUFFER_SIZE, buffer.Length - n))) != -1)
+                                while ((i = stream.read(b, 0, System.Math.Min(DEFAULT_BUFFER_SIZE, buffer.Length - n))) != -1)
                                 {
                                     b.AsSpan().Slice(0, i).CopyTo(buffer.Slice(n));
                                     n += i;
@@ -1398,24 +1401,28 @@ namespace IKVM.Jdbc.Data
                 var column = ordinal + 1;
                 switch (ResultSet.getMetaData().getColumnType(column))
                 {
+                    case Types.NUMERIC:
                     case Types.DECIMAL:
                         var decimal_ = ResultSet.getBigDecimal(column);
                         if (ResultSet.wasNull())
                             return null;
 
-                        return decimal.Parse(decimal_.ToString());
+                        return JdbcTypeConversion.ToDecimal(decimal_);
+
                     case Types.DOUBLE:
                         var double_ = ResultSet.getDouble(column);
                         if (ResultSet.wasNull())
                             return null;
 
                         return (decimal)double_;
+
                     case Types.FLOAT:
                         var float_ = ResultSet.getFloat(column);
                         if (ResultSet.wasNull())
                             return null;
 
                         return (decimal)float_;
+
                     default:
                         throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Decimal.");
                 }
@@ -1445,6 +1452,17 @@ namespace IKVM.Jdbc.Data
                 var column = ordinal + 1;
                 switch (ResultSet.getMetaData().getColumnType(column))
                 {
+                    case Types.NUMERIC:
+                    case Types.DECIMAL:
+                        var decimal_ = ResultSet.getBigDecimal(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        checked
+                        {
+                            return (double)JdbcTypeConversion.ToDecimal(decimal_);
+                        }
+
                     case Types.DOUBLE:
                         var double_ = ResultSet.getDouble(column);
                         if (ResultSet.wasNull())
@@ -1486,12 +1504,34 @@ namespace IKVM.Jdbc.Data
                 var column = ordinal + 1;
                 switch (ResultSet.getMetaData().getColumnType(column))
                 {
+                    case Types.NUMERIC:
+                    case Types.DECIMAL:
+                        var decimal_ = ResultSet.getBigDecimal(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        checked
+                        {
+                            return (float)JdbcTypeConversion.ToDecimal(decimal_);
+                        }
+
+                    case Types.DOUBLE:
+                        var double_ = ResultSet.getDouble(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        checked
+                        {
+                            return (float)double_;
+                        }
+
                     case Types.FLOAT:
                         var float_ = ResultSet.getFloat(column);
                         if (ResultSet.wasNull())
                             return null;
 
                         return float_;
+
                     default:
                         throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Single.");
                 }
@@ -1740,7 +1780,7 @@ namespace IKVM.Jdbc.Data
                     case Types.CHAR:
                     case Types.NCHAR:
                         var char_ = ResultSet.getByte(column);
-                        return ResultSet.wasNull() ? TextReader.Null : new StringReader(((char)char_).ToString());
+                        return ResultSet.wasNull() ? TextReader.Null : new System.IO.StringReader(((char)char_).ToString());
                     case Types.VARCHAR:
                     case Types.NVARCHAR:
                     case Types.LONGVARCHAR:
