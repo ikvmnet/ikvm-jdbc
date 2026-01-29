@@ -392,20 +392,17 @@ namespace IKVM.Jdbc.Data
                     case Types.STRUCT:
                         throw new NotSupportedException();
                     case Types.TIME:
-#if NETFRAMEWORK
                         var time_ = ResultSet.getTime(column);
                         return ResultSet.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(time_.getTime()).TimeOfDay;
-#else
-                        var time_ = ResultSet.getTime(column);
-                        return ResultSet.wasNull() ? DBNull.Value : TimeOnly.FromDateTime(DateTimeOffset.FromUnixTimeMilliseconds(time_.getTime()).DateTime);
-#endif
                     case Types.TIMESTAMP:
                         var timestamp_ = ResultSet.getTimestamp(column);
                         return ResultSet.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(timestamp_.getTime()).DateTime;
-                    case Types.TIMESTAMP_WITH_TIMEZONE:
                     case Types.TIME_WITH_TIMEZONE:
+                        var offsettime_ = (OffsetTime?)ResultSet.getObject(column, typeof(OffsetTime));
+                        return ResultSet.wasNull() || offsettime_ is null ? DBNull.Value : new DateTimeOffset(0, 0, 0, offsettime_.getHour(), offsettime_.getMinute(), offsettime_.getSecond(), offsettime_.getNano() * 1000000, TimeSpan.FromSeconds(offsettime_.getOffset().getTotalSeconds())).TimeOfDay;
+                    case Types.TIMESTAMP_WITH_TIMEZONE:
                         var offsetdatetime_ = (OffsetDateTime?)ResultSet.getObject(column, typeof(OffsetDateTime));
-                        return ResultSet.wasNull() || offsetdatetime_ is null ? DBNull.Value : new DateTimeOffset(offsetdatetime_.getYear(), offsetdatetime_.getMonthValue(), offsetdatetime_.getDayOfMonth(), offsetdatetime_.getHour(), offsetdatetime_.getMinute(), offsetdatetime_.getSecond(), TimeSpan.FromSeconds(offsetdatetime_.getOffset().getTotalSeconds()));
+                        return ResultSet.wasNull() || offsetdatetime_ is null ? DBNull.Value : new DateTimeOffset(offsetdatetime_.getYear(), offsetdatetime_.getMonthValue(), offsetdatetime_.getDayOfMonth(), offsetdatetime_.getHour(), offsetdatetime_.getMinute(), offsetdatetime_.getSecond(), offsetdatetime_.getNano() * 1000000, TimeSpan.FromSeconds(offsetdatetime_.getOffset().getTotalSeconds()));
                     case Types.TINYINT:
                         var tinyint_ = ResultSet.getByte(column);
                         return ResultSet.wasNull() ? DBNull.Value : tinyint_;
@@ -1189,13 +1186,19 @@ namespace IKVM.Jdbc.Data
 
                         throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateTime.");
 
-                    case Types.TIMESTAMP_WITH_TIMEZONE:
                     case Types.TIME_WITH_TIMEZONE:
-                        var datetime_ = (OffsetDateTime?)ResultSet.getObject(column, typeof(OffsetDateTime));
-                        if (ResultSet.wasNull() || datetime_ is null)
+                        var offsettime_ = (OffsetTime?)ResultSet.getObject(column, typeof(OffsetTime));
+                        if (ResultSet.wasNull() || offsettime_ is null)
                             return null;
 
-                        return new DateTime(datetime_.getYear(), datetime_.getMonthValue(), datetime_.getDayOfMonth());
+                        return new DateTimeOffset(0, 0, 0, offsettime_.getHour(), offsettime_.getMinute(), offsettime_.getSecond(), offsettime_.getNano() * 1000000, TimeSpan.FromSeconds(offsettime_.getOffset().getTotalSeconds())).DateTime;
+
+                    case Types.TIMESTAMP_WITH_TIMEZONE:
+                        var offsetdatetime_ = (OffsetDateTime?)ResultSet.getObject(column, typeof(OffsetDateTime));
+                        if (ResultSet.wasNull() || offsetdatetime_ is null)
+                            return null;
+
+                        return new DateTimeOffset(offsetdatetime_.getYear(), offsetdatetime_.getMonthValue(), offsetdatetime_.getDayOfMonth(), offsetdatetime_.getHour(), offsetdatetime_.getMinute(), offsetdatetime_.getSecond(), offsetdatetime_.getNano() * 1000000, TimeSpan.FromSeconds(offsetdatetime_.getOffset().getTotalSeconds())).DateTime;
 
                     default:
                         throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateTime.");
@@ -1288,13 +1291,13 @@ namespace IKVM.Jdbc.Data
                             return DateOnly.FromDateTime(d.DateTime);
 
                         throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateOnly.");
+
                     case Types.TIMESTAMP_WITH_TIMEZONE:
-                    case Types.TIME_WITH_TIMEZONE:
-                        var datetime_ = (OffsetDateTime?)ResultSet.getObject(column, typeof(OffsetDateTime));
-                        if (ResultSet.wasNull() || datetime_ is null)
+                        var offsetdatetime_ = (OffsetDateTime?)ResultSet.getObject(column, typeof(OffsetDateTime));
+                        if (ResultSet.wasNull() || offsetdatetime_ is null)
                             return null;
 
-                        return new DateOnly(datetime_.getYear(), datetime_.getMonthValue(), datetime_.getDayOfMonth());
+                        return new DateOnly(offsetdatetime_.getYear(), offsetdatetime_.getMonthValue(), offsetdatetime_.getDayOfMonth());
                     default:
                         throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateOnly.");
                 }
