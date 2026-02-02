@@ -1517,12 +1517,35 @@ namespace IKVM.Jdbc.Data
                             return null;
 
                         return double_;
+
                     case Types.FLOAT:
                         var float_ = ResultSet.getFloat(column);
                         if (ResultSet.wasNull())
                             return null;
 
                         return float_;
+
+                    case Types.INTEGER:
+                        var int_ = ResultSet.getInt(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        return checked((double)int_);
+
+                    case Types.SMALLINT:
+                        var short_ = ResultSet.getShort(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        return checked((double)short_);
+
+                    case Types.TINYINT:
+                        var byte_ = ResultSet.getByte(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        return checked((double)byte_);
+
                     default:
                         throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Double.");
                 }
@@ -1573,6 +1596,27 @@ namespace IKVM.Jdbc.Data
                             return null;
 
                         return float_;
+
+                    case Types.INTEGER:
+                        var int_ = ResultSet.getInt(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        return checked((float)int_);
+
+                    case Types.SMALLINT:
+                        var short_ = ResultSet.getShort(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        return checked((float)short_);
+
+                    case Types.TINYINT:
+                        var byte_ = ResultSet.getByte(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        return checked((float)byte_);
 
                     default:
                         throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Single.");
