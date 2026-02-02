@@ -1453,6 +1453,27 @@ namespace IKVM.Jdbc.Data
 
                         return (decimal)float_;
 
+                    case Types.INTEGER:
+                        var int_ = ResultSet.getInt(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        return checked((decimal)int_);
+
+                    case Types.SMALLINT:
+                        var short_ = ResultSet.getShort(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        return checked((decimal)short_);
+
+                    case Types.TINYINT:
+                        var byte_ = ResultSet.getByte(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        return checked((decimal)byte_);
+
                     default:
                         throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Decimal.");
                 }
