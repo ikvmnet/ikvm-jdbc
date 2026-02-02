@@ -515,7 +515,7 @@ namespace IKVM.Jdbc.Data
                 }
                 else if (typeof(T) == typeof(uint?))
                 {
-                    var value = GetNullableInt32(ordinal);
+                    var value = GetNullableUInt32(ordinal);
                     return value is not null ? (T)(object)value : default;
                 }
                 else if (typeof(T) == typeof(long))
