@@ -488,6 +488,16 @@ namespace IKVM.Jdbc.Data
                     var value = GetNullableInt16(ordinal);
                     return value is not null ? (T)(object)value : default;
                 }
+                else if (typeof(T) == typeof(ushort))
+                {
+                    var value = GetUInt16(ordinal);
+                    return (T)(object)value;
+                }
+                else if (typeof(T) == typeof(ushort?))
+                {
+                    var value = GetNullableUInt16(ordinal);
+                    return value is not null ? (T)(object)value : default;
+                }
                 else if (typeof(T) == typeof(int))
                 {
                     var value = GetInt32(ordinal);
@@ -498,14 +508,34 @@ namespace IKVM.Jdbc.Data
                     var value = GetNullableInt32(ordinal);
                     return value is not null ? (T)(object)value : default;
                 }
+                else if (typeof(T) == typeof(uint))
+                {
+                    var value = GetInt32(ordinal);
+                    return (T)(object)value;
+                }
+                else if (typeof(T) == typeof(uint?))
+                {
+                    var value = GetNullableInt32(ordinal);
+                    return value is not null ? (T)(object)value : default;
+                }
                 else if (typeof(T) == typeof(long))
                 {
-                    var value = GetInt64(ordinal);
+                    var value = GetUInt64(ordinal);
                     return (T)(object)value;
                 }
                 else if (typeof(T) == typeof(long?))
                 {
-                    var value = GetNullableInt64(ordinal);
+                    var value = GetNullableUInt64(ordinal);
+                    return value is not null ? (T)(object)value : default;
+                }
+                else if (typeof(T) == typeof(ulong))
+                {
+                    var value = GetUInt64(ordinal);
+                    return (T)(object)value;
+                }
+                else if (typeof(T) == typeof(ulong?))
+                {
+                    var value = GetNullableUInt64(ordinal);
                     return value is not null ? (T)(object)value : default;
                 }
                 else if (typeof(T) == typeof(float))
@@ -1458,10 +1488,7 @@ namespace IKVM.Jdbc.Data
                         if (ResultSet.wasNull())
                             return null;
 
-                        checked
-                        {
-                            return (double)JdbcTypeConversion.ToDecimal(decimal_);
-                        }
+                        return checked((double)JdbcTypeConversion.ToDecimal(decimal_));
 
                     case Types.DOUBLE:
                         var double_ = ResultSet.getDouble(column);
@@ -1510,20 +1537,14 @@ namespace IKVM.Jdbc.Data
                         if (ResultSet.wasNull())
                             return null;
 
-                        checked
-                        {
-                            return (float)JdbcTypeConversion.ToDecimal(decimal_);
-                        }
+                        return checked((float)JdbcTypeConversion.ToDecimal(decimal_));
 
                     case Types.DOUBLE:
                         var double_ = ResultSet.getDouble(column);
                         if (ResultSet.wasNull())
                             return null;
 
-                        checked
-                        {
-                            return (float)double_;
-                        }
+                        return checked((float)double_);
 
                     case Types.FLOAT:
                         var float_ = ResultSet.getFloat(column);
@@ -1572,6 +1593,20 @@ namespace IKVM.Jdbc.Data
                 var column = ordinal + 1;
                 switch (ResultSet.getMetaData().getColumnType(column))
                 {
+                    case Types.BIGINT:
+                        var long_ = ResultSet.getLong(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        return checked((short?)long_);
+
+                    case Types.INTEGER:
+                        var int_ = ResultSet.getInt(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        return checked((short?)int_);
+
                     case Types.SMALLINT:
                         var short_ = ResultSet.getShort(column);
                         if (ResultSet.wasNull())
@@ -1586,6 +1621,61 @@ namespace IKVM.Jdbc.Data
                         return byte_;
                     default:
                         throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Int16.");
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
+        }
+
+        /// <inheritdoc />
+        public ushort GetUInt16(int ordinal)
+        {
+            return GetNullableUInt16(ordinal) ?? throw new SqlNullValueException();
+        }
+
+        /// <inheritdoc />
+        ushort? GetNullableUInt16(int ordinal)
+        {
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= ResultSet.getMetaData().getColumnCount())
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
+            try
+            {
+                var column = ordinal + 1;
+                switch (ResultSet.getMetaData().getColumnType(column))
+                {
+                    case Types.BIGINT:
+                        var long_ = ResultSet.getLong(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        return checked((ushort?)long_);
+
+                    case Types.INTEGER:
+                        var int_ = ResultSet.getInt(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        return checked((ushort?)int_);
+
+                    case Types.SMALLINT:
+                        var short_ = ResultSet.getShort(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        return checked((ushort?)short_);
+                    case Types.TINYINT:
+                        var byte_ = ResultSet.getByte(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        return checked((ushort?)byte_);
+                    default:
+                        throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into UInt16.");
                 }
             }
             catch (SQLException e)
@@ -1613,26 +1703,90 @@ namespace IKVM.Jdbc.Data
                 var column = ordinal + 1;
                 switch (ResultSet.getMetaData().getColumnType(column))
                 {
+                    case Types.BIGINT:
+                        var long_ = ResultSet.getLong(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        return checked((int?)long_);
+
                     case Types.INTEGER:
                         var int_ = ResultSet.getInt(column);
                         if (ResultSet.wasNull())
                             return null;
 
                         return int_;
+
                     case Types.SMALLINT:
                         var short_ = ResultSet.getShort(column);
                         if (ResultSet.wasNull())
                             return null;
 
                         return short_;
+
                     case Types.TINYINT:
                         var byte_ = ResultSet.getByte(column);
                         if (ResultSet.wasNull())
                             return null;
 
                         return byte_;
+
                     default:
                         throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Int32.");
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
+        }
+
+        /// <inheritdoc />
+        public uint GetUInt32(int ordinal)
+        {
+            return GetNullableUInt32(ordinal) ?? throw new SqlNullValueException();
+        }
+
+        /// <inheritdoc />
+        uint? GetNullableUInt32(int ordinal)
+        {
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= ResultSet.getMetaData().getColumnCount())
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
+            try
+            {
+                var column = ordinal + 1;
+                switch (ResultSet.getMetaData().getColumnType(column))
+                {
+                    case Types.BIGINT:
+                        var long_ = ResultSet.getLong(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        return checked((uint?)long_);
+
+                    case Types.INTEGER:
+                        var int_ = ResultSet.getInt(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        return checked((uint?)int_);
+                    case Types.SMALLINT:
+                        var short_ = ResultSet.getShort(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        return checked((uint?)short_);
+                    case Types.TINYINT:
+                        var byte_ = ResultSet.getByte(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        return checked((uint?)byte_);
+                    default:
+                        throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into UInt32.");
                 }
             }
             catch (SQLException e)
@@ -1686,6 +1840,59 @@ namespace IKVM.Jdbc.Data
                         return byte_;
                     default:
                         throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Int64.");
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
+        }
+
+        /// <inheritdoc />
+        public ulong GetUInt64(int ordinal)
+        {
+            return GetNullableUInt64(ordinal) ?? throw new SqlNullValueException();
+        }
+
+        /// <inheritdoc />
+        ulong? GetNullableUInt64(int ordinal)
+        {
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= ResultSet.getMetaData().getColumnCount())
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
+            try
+            {
+                var column = ordinal + 1;
+                switch (ResultSet.getMetaData().getColumnType(column))
+                {
+                    case Types.BIGINT:
+                        var long_ = ResultSet.getLong(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        return checked((ulong?)long_);
+                    case Types.INTEGER:
+                        var int_ = ResultSet.getInt(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        return checked((ulong?)int_);
+                    case Types.SMALLINT:
+                        var short_ = ResultSet.getShort(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        return checked((ulong?)short_);
+                    case Types.TINYINT:
+                        var byte_ = ResultSet.getByte(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        return checked((ulong?)byte_);
+                    default:
+                        throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into UInt64.");
                 }
             }
             catch (SQLException e)
