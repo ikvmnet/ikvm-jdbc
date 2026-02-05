@@ -295,10 +295,11 @@ namespace IKVM.Jdbc.Data
         /// </summary>
         /// <param name="ordinal"></param>
         /// <returns></returns>
-        public object? GetJavaObject(int ordinal)
+        public object? GetObject(int ordinal)
         {
             var column = ordinal + 1;
-            return ResultSet.getObject(column);
+            var object_ = ResultSet.getObject(column);
+            return ResultSet.wasNull() ? null : object_;
         }
 
         /// <summary>
@@ -306,9 +307,10 @@ namespace IKVM.Jdbc.Data
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public object? GetJavaObject(string name)
+        public object? GetObject(string name)
         {
-            return ResultSet.getObject(name);
+            var object_ = ResultSet.getObject(name);
+            return ResultSet.wasNull() ? null : object_;
         }
 
         /// <summary>
