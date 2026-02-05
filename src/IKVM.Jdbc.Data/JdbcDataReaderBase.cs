@@ -653,7 +653,11 @@ namespace IKVM.Jdbc.Data
                 }
                 else
                 {
-                    return (T)GetValue(ordinal);
+                    var value = GetValue(ordinal);
+                    if (value is T t)
+                        return t;
+                    else
+                        throw new JdbcException($"Could not coerce underlying JDBC value to {typeof(T).FullName}.");
                 }
             }
             catch (SQLException e)
