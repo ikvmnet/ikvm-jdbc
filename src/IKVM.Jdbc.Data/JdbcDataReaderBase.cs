@@ -174,7 +174,7 @@ namespace IKVM.Jdbc.Data
                     Types.BOOLEAN => typeof(bool),
                     Types.CHAR => typeof(string),
                     Types.CLOB => typeof(string),
-                    Types.DATALINK => throw new NotSupportedException("DATALINK type not supported."),
+                    Types.DATALINK => throw new NotImplementedException("DATALINK type not supported."),
 #if NETFRAMEWORK
                     Types.DATE => typeof(DateTime),
 #else
@@ -194,10 +194,10 @@ namespace IKVM.Jdbc.Data
                     Types.NULL => typeof(object),
                     Types.NUMERIC => typeof(decimal),
                     Types.NVARCHAR => typeof(string),
-                    Types.OTHER => throw new NotSupportedException("OTHER type not supported."),
+                    Types.OTHER => throw new NotImplementedException("OTHER type not supported."),
                     Types.REAL => typeof(float),
-                    Types.REF => throw new NotSupportedException("REF type not supported."),
-                    Types.REF_CURSOR => throw new NotSupportedException("REF_CURSOR type not supported."),
+                    Types.REF => throw new NotImplementedException("REF type not supported."),
+                    Types.REF_CURSOR => throw new NotImplementedException("REF_CURSOR type not supported."),
                     Types.ROWID => throw new NotImplementedException("ROWID type not supported."),
                     Types.SMALLINT => typeof(short),
                     Types.SQLXML => typeof(XDocument),
@@ -209,7 +209,7 @@ namespace IKVM.Jdbc.Data
                     Types.TINYINT => typeof(byte),
                     Types.VARBINARY => typeof(byte[]),
                     Types.VARCHAR => typeof(string),
-                    _ => throw new NotSupportedException($"JDBC SQL type '{columnType}' not supported."),
+                    _ => throw new NotImplementedException($"JDBC SQL type '{columnType}' not supported."),
                 };
             }
             catch (SQLException e)
@@ -372,7 +372,7 @@ namespace IKVM.Jdbc.Data
                         var clob_ = ResultSet.getString(column);
                         return ResultSet.wasNull() ? DBNull.Value : clob_;
                     case Types.DATALINK:
-                        throw new NotSupportedException("DATALINK type not supported.");
+                        throw new NotImplementedException("DATALINK type not supported.");
                     case Types.DATE:
                         var date_ = ResultSet.getDate(column);
                         return ResultSet.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(date_.getTime()).DateTime;
@@ -380,7 +380,7 @@ namespace IKVM.Jdbc.Data
                         var decimal_ = ResultSet.getBigDecimal(column);
                         return ResultSet.wasNull() ? DBNull.Value : JdbcTypeConversion.ToDecimal(decimal_);
                     case Types.DISTINCT:
-                        throw new NotImplementedException();
+                        throw new NotImplementedException("DISTINCT type not supported.");
                     case Types.DOUBLE:
                         var double_ = ResultSet.getDouble(column);
                         return ResultSet.wasNull() ? DBNull.Value : double_;
@@ -411,19 +411,19 @@ namespace IKVM.Jdbc.Data
                     case Types.NULL:
                         return DBNull.Value;
                     case Types.NUMERIC:
-                        throw new NotImplementedException();
+                        throw new NotImplementedException("NUMERIC type not supported.");
                     case Types.NVARCHAR:
                         var nvarchar_ = ResultSet.getString(column);
                         return ResultSet.wasNull() ? DBNull.Value : nvarchar_;
                     case Types.OTHER:
-                        throw new NotSupportedException("OTHER type not supported.");
+                        throw new NotImplementedException("OTHER type not supported.");
                     case Types.REAL:
                         var real_ = ResultSet.getFloat(column);
                         return ResultSet.wasNull() ? DBNull.Value : real_;
                     case Types.REF:
-                        throw new NotSupportedException("REF type not supported.");
+                        throw new NotImplementedException("REF type not supported.");
                     case Types.REF_CURSOR:
-                        throw new NotSupportedException("REF_CURSOR type not supported.");
+                        throw new NotImplementedException("REF_CURSOR type not supported.");
                     case Types.ROWID:
                         throw new NotImplementedException("ROWID type not supported.");
                     case Types.SMALLINT:
@@ -457,7 +457,7 @@ namespace IKVM.Jdbc.Data
                         var varchar_ = ResultSet.getString(column);
                         return ResultSet.wasNull() ? DBNull.Value : varchar_;
                     default:
-                        throw new NotSupportedException("Type not supported.");
+                        throw new NotImplementedException("Type not supported.");
                 }
             }
             catch (SQLException e)
@@ -653,7 +653,7 @@ namespace IKVM.Jdbc.Data
                     if (value is T t)
                         return t;
 
-                    throw new JdbcException($"Could not coerce underlying JDBC value of type {value.GetType().FullName} to {typeof(T).FullName}.");
+                    throw new JdbcTypeException($"Could not coerce underlying JDBC value of type {value.GetType().FullName} to {typeof(T).FullName}.");
                 }
             }
             catch (SQLException e)
@@ -743,38 +743,83 @@ namespace IKVM.Jdbc.Data
                             return null;
 
                         return bool_;
+
                     case Types.BIT:
                         var bit_ = ResultSet.getBoolean(column);
                         if (ResultSet.wasNull())
                             return null;
 
                         return bit_;
+
                     case Types.TINYINT:
                         var byte_ = ResultSet.getByte(column);
                         if (ResultSet.wasNull())
                             return null;
 
                         return byte_ != 0;
+
                     case Types.SMALLINT:
                         var short_ = ResultSet.getShort(column);
                         if (ResultSet.wasNull())
                             return null;
 
                         return short_ != 0;
+
                     case Types.INTEGER:
                         var int_ = ResultSet.getInt(column);
                         if (ResultSet.wasNull())
                             return null;
 
                         return int_ != 0;
+
                     case Types.BIGINT:
                         var long_ = ResultSet.getLong(column);
                         if (ResultSet.wasNull())
                             return null;
 
                         return long_ != 0;
+
+                    case Types.STRUCT:
+                        var struct_ = ResultSet.getObject(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        if (struct_ is long j)
+                            return j != 0;
+                        if (struct_ is int i)
+                            return i != 0;
+                        if (struct_ is short s)
+                            return s != 0;
+                        if (struct_ is sbyte b)
+                            return b != 0;
+
+                        if (struct_ is ulong uj)
+                            return uj != 0;
+                        if (struct_ is uint ui)
+                            return ui != 0;
+                        if (struct_ is ushort us)
+                            return us != 0;
+                        if (struct_ is byte ub)
+                            return ub != 0;
+
+                        if (struct_ is bool z)
+                            return z;
+
+                        if (struct_ is java.lang.Long jj)
+                            return jj.longValue() != 0;
+                        if (struct_ is java.lang.Integer ji)
+                            return ji.intValue() != 0;
+                        if (struct_ is java.lang.Short js)
+                            return js.shortValue() != 0;
+                        if (struct_ is java.lang.Byte jb)
+                            return jb.byteValue() != 0;
+                        if (struct_ is java.lang.Boolean jz)
+                            return jz.booleanValue();
+
+                        throw new JdbcTypeException($"Could not coerce STRUCT type {struct_.GetType().FullName} into Boolean.");
+
                     default:
-                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Boolean.");
+                        throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into Boolean.");
                 }
             }
             catch (SQLException e)
@@ -808,20 +853,62 @@ namespace IKVM.Jdbc.Data
                             return null;
 
                         return bool_ ? (byte)1 : (byte)0;
+
                     case Types.BIT:
                         var bit_ = ResultSet.getBoolean(column);
                         if (ResultSet.wasNull())
                             return null;
 
                         return bit_ ? (byte)1 : (byte)0;
+
                     case Types.TINYINT:
                         var byte_ = ResultSet.getByte(column);
                         if (ResultSet.wasNull())
                             return null;
 
                         return byte_;
+
+                    case Types.STRUCT:
+                        var struct_ = ResultSet.getObject(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        if (struct_ is long j)
+                            return checked((byte)j);
+                        if (struct_ is int i)
+                            return checked((byte)i);
+                        if (struct_ is short s)
+                            return checked((byte)s);
+                        if (struct_ is sbyte b)
+                            return checked((byte)b);
+
+                        if (struct_ is ulong uj)
+                            return checked((byte)uj);
+                        if (struct_ is uint ui)
+                            return checked((byte)ui);
+                        if (struct_ is ushort us)
+                            return checked((byte)us);
+                        if (struct_ is byte ub)
+                            return checked((byte)ub);
+
+                        if (struct_ is bool z)
+                            return z ? (byte)1 : (byte)0;
+
+                        if (struct_ is java.lang.Long jj)
+                            return checked((byte)jj.longValue());
+                        if (struct_ is java.lang.Integer ji)
+                            return checked((byte)ji.intValue());
+                        if (struct_ is java.lang.Short js)
+                            return checked((byte)js.shortValue());
+                        if (struct_ is java.lang.Byte jb)
+                            return checked((byte)jb.byteValue());
+                        if (struct_ is java.lang.Boolean jz)
+                            return jz.booleanValue() ? (byte)1 : (byte)0;
+
+                        throw new JdbcTypeException($"Could not coerce STRUCT type {struct_.GetType().FullName} into Byte.");
+
                     default:
-                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Byte.");
+                        throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into Byte.");
                 }
             }
             catch (SQLException e)
@@ -858,7 +945,7 @@ namespace IKVM.Jdbc.Data
 
                         return b;
                     default:
-                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Byte[].");
+                        throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into Byte[].");
                 }
             }
             catch (SQLException e)
@@ -1035,7 +1122,7 @@ namespace IKVM.Jdbc.Data
 
                         return (char)nchar_;
                     default:
-                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Char.");
+                        throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into Char.");
                 }
             }
             catch (SQLException e)
@@ -1075,7 +1162,7 @@ namespace IKVM.Jdbc.Data
 
                         return b.ToCharArray();
                     default:
-                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Char[].");
+                        throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into Char[].");
                 }
             }
             catch (SQLException e)
@@ -1264,7 +1351,7 @@ namespace IKVM.Jdbc.Data
                         if (DateTimeOffset.TryParse(string_, null, DateTimeStyles.AssumeLocal, out var d))
                             return d.DateTime;
 
-                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateTime.");
+                        throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateTime.");
 
                     case Types.TIME_WITH_TIMEZONE:
                         var offsettime_ = (OffsetTime?)ResultSet.getObject(column, typeof(OffsetTime));
@@ -1281,7 +1368,7 @@ namespace IKVM.Jdbc.Data
                         return new DateTimeOffset(offsetdatetime_.getYear(), offsetdatetime_.getMonthValue(), offsetdatetime_.getDayOfMonth(), offsetdatetime_.getHour(), offsetdatetime_.getMinute(), offsetdatetime_.getSecond(), offsetdatetime_.getNano() * 1000000, TimeSpan.FromSeconds(offsetdatetime_.getOffset().getTotalSeconds())).DateTime;
 
                     default:
-                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateTime.");
+                        throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateTime.");
                 }
             }
             catch (SQLException e)
@@ -1316,7 +1403,7 @@ namespace IKVM.Jdbc.Data
 
                         return TimeSpan.FromMilliseconds(date_.getTime());
                     default:
-                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into TimeSpan.");
+                        throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into TimeSpan.");
                 }
             }
             catch (SQLException e)
@@ -1370,7 +1457,7 @@ namespace IKVM.Jdbc.Data
                         if (DateTimeOffset.TryParse(string_, null, DateTimeStyles.AssumeLocal, out var d))
                             return DateOnly.FromDateTime(d.DateTime);
 
-                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateOnly.");
+                        throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateOnly.");
 
                     case Types.TIMESTAMP_WITH_TIMEZONE:
                         var offsetdatetime_ = (OffsetDateTime?)ResultSet.getObject(column, typeof(OffsetDateTime));
@@ -1379,7 +1466,7 @@ namespace IKVM.Jdbc.Data
 
                         return new DateOnly(offsetdatetime_.getYear(), offsetdatetime_.getMonthValue(), offsetdatetime_.getDayOfMonth());
                     default:
-                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateOnly.");
+                        throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateOnly.");
                 }
             }
             catch (SQLException e)
@@ -1420,7 +1507,7 @@ namespace IKVM.Jdbc.Data
 
                         return TimeOnly.FromDateTime(DateTimeOffset.FromUnixTimeMilliseconds(timestamp_.getTime()).DateTime);
                     default:
-                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into TimeOnly.");
+                        throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into TimeOnly.");
                 }
             }
             catch (SQLException e)
@@ -1501,7 +1588,7 @@ namespace IKVM.Jdbc.Data
                         return checked((decimal)byte_);
 
                     default:
-                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Decimal.");
+                        throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into Decimal.");
                 }
             }
             catch (SQLException e)
@@ -1573,7 +1660,7 @@ namespace IKVM.Jdbc.Data
                         return checked((double)byte_);
 
                     default:
-                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Double.");
+                        throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into Double.");
                 }
             }
             catch (SQLException e)
@@ -1645,7 +1732,7 @@ namespace IKVM.Jdbc.Data
                         return checked((float)byte_);
 
                     default:
-                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Single.");
+                        throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into Single.");
                 }
             }
             catch (SQLException e)
@@ -1749,8 +1836,9 @@ namespace IKVM.Jdbc.Data
                             return jz.booleanValue() ? (short)1 : (short)0;
 
                         throw new JdbcTypeException($"Could not coerce STRUCT type {struct_.GetType().FullName} into Int16.");
+
                     default:
-                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Int16.");
+                        throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into Int16.");
                 }
             }
             catch (SQLException e)
@@ -1843,8 +1931,9 @@ namespace IKVM.Jdbc.Data
                             return jz.booleanValue() ? (ushort)1 : (ushort)0;
 
                         throw new JdbcTypeException($"Could not coerce STRUCT type {struct_.GetType().FullName} into UInt16.");
+
                     default:
-                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into UInt16.");
+                        throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into UInt16.");
                 }
             }
             catch (SQLException e)
@@ -1938,8 +2027,9 @@ namespace IKVM.Jdbc.Data
                             return jz.booleanValue() ? (int)1 : (int)0;
 
                         throw new JdbcTypeException($"Could not coerce STRUCT type {struct_.GetType().FullName} into Int32.");
+
                     default:
-                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Int32.");
+                        throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into Int32.");
                 }
             }
             catch (SQLException e)
@@ -2033,8 +2123,9 @@ namespace IKVM.Jdbc.Data
                             return jz.booleanValue() ? (uint)1 : (uint)0;
 
                         throw new JdbcTypeException($"Could not coerce STRUCT type {struct_.GetType().FullName} into UInt32.");
+
                     default:
-                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into UInt32.");
+                        throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into UInt32.");
                 }
             }
             catch (SQLException e)
@@ -2128,8 +2219,9 @@ namespace IKVM.Jdbc.Data
                             return jz.booleanValue() ? (long)1 : (long)0;
 
                         throw new JdbcException($"Could not coerce STRUCT type {struct_.GetType().FullName} into Int64.");
+
                     default:
-                        throw new JdbcException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Int64.");
+                        throw new JdbcException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into Int64.");
                 }
             }
             catch (SQLException e)
@@ -2223,8 +2315,9 @@ namespace IKVM.Jdbc.Data
                             return jz.booleanValue() ? (ulong)1 : (ulong)0;
 
                         throw new JdbcTypeException($"Could not coerce STRUCT type {struct_.GetType().FullName} into UInt64.");
+
                     default:
-                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into UInt64.");
+                        throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into UInt64.");
                 }
             }
             catch (SQLException e)
@@ -2264,8 +2357,9 @@ namespace IKVM.Jdbc.Data
                             throw new JdbcNullValueException();
 
                         return string_;
+
                     default:
-                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into String.");
+                        throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into String.");
                 }
             }
             catch (SQLException e)
