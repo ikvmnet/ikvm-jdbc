@@ -169,7 +169,8 @@ namespace IKVM.Jdbc.Data
             try
             {
                 var column = ordinal + 1;
-                return ResultSet.getMetaData().getColumnType(column) switch
+                var columnType = ResultSet.getMetaData().getColumnType(column);
+                return columnType switch
                 {
                     Types.ARRAY => typeof(System.Array),
                     Types.BIGINT => typeof(long),
@@ -206,7 +207,7 @@ namespace IKVM.Jdbc.Data
                     Types.ROWID => throw new NotImplementedException("ROWID type not supported."),
                     Types.SMALLINT => typeof(short),
                     Types.SQLXML => typeof(XDocument),
-                    Types.STRUCT => throw new NotSupportedException("STRUCT type not supported."),
+                    Types.STRUCT => typeof(object),
                     Types.TIME => typeof(TimeSpan),
                     Types.TIMESTAMP => typeof(DateTime),
                     Types.TIMESTAMP_WITH_TIMEZONE => typeof(DateTimeOffset),
@@ -214,7 +215,7 @@ namespace IKVM.Jdbc.Data
                     Types.TINYINT => typeof(byte),
                     Types.VARBINARY => typeof(byte[]),
                     Types.VARCHAR => typeof(string),
-                    _ => throw new NotSupportedException("Unknown type not supported."),
+                    _ => throw new NotSupportedException($"Column type '{columnType}' not supported."),
                 };
             }
             catch (SQLException e)
@@ -313,7 +314,7 @@ namespace IKVM.Jdbc.Data
         /// <summary>
         /// Gets the value of the specified column as an instance of <see cref="object"/>.
         /// </summary>
-        /// <param name="column"></param>
+        /// <param name="ordinal"></param>
         /// <returns></returns>
         /// <exception cref="NotSupportedException"></exception>
         public override object GetValue(int ordinal)
@@ -414,7 +415,8 @@ namespace IKVM.Jdbc.Data
                         var sqlxml_ = ResultSet.getSQLXML(column);
                         return ResultSet.wasNull() ? DBNull.Value : XDocument.Parse(sqlxml_.getString());
                     case Types.STRUCT:
-                        throw new NotSupportedException("STRUCT type not supported.");
+                        var struct_ = ResultSet.getObject(column);
+                        return ResultSet.wasNull() ? DBNull.Value : struct_;
                     case Types.TIME:
                         var time_ = ResultSet.getTime(column);
                         return ResultSet.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(time_.getTime()).TimeOfDay;
