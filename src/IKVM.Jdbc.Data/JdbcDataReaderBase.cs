@@ -179,14 +179,14 @@ namespace IKVM.Jdbc.Data
                     Types.BOOLEAN => typeof(bool),
                     Types.CHAR => typeof(string),
                     Types.CLOB => typeof(string),
-                    Types.DATALINK => throw new NotSupportedException(),
+                    Types.DATALINK => throw new NotSupportedException("DATALINK type not supported."),
 #if NETFRAMEWORK
                     Types.DATE => typeof(DateTime),
 #else
                     Types.DATE => typeof(DateOnly),
 #endif
                     Types.DECIMAL => typeof(decimal),
-                    Types.DISTINCT => throw new NotImplementedException(),
+                    Types.DISTINCT => throw new NotImplementedException("DISTINCT type not supported."),
                     Types.DOUBLE => typeof(double),
                     Types.FLOAT => typeof(float),
                     Types.INTEGER => typeof(int),
@@ -199,14 +199,14 @@ namespace IKVM.Jdbc.Data
                     Types.NULL => typeof(object),
                     Types.NUMERIC => typeof(decimal),
                     Types.NVARCHAR => typeof(string),
-                    Types.OTHER => throw new NotSupportedException(),
+                    Types.OTHER => throw new NotSupportedException("OTHER type not supported."),
                     Types.REAL => typeof(float),
-                    Types.REF => throw new NotSupportedException(),
-                    Types.REF_CURSOR => throw new NotSupportedException(),
-                    Types.ROWID => throw new NotImplementedException(),
+                    Types.REF => throw new NotSupportedException("REF type not supported."),
+                    Types.REF_CURSOR => throw new NotSupportedException("REF_CURSOR type not supported."),
+                    Types.ROWID => throw new NotImplementedException("ROWID type not supported."),
                     Types.SMALLINT => typeof(short),
                     Types.SQLXML => typeof(XDocument),
-                    Types.STRUCT => throw new NotSupportedException(),
+                    Types.STRUCT => throw new NotSupportedException("STRUCT type not supported."),
                     Types.TIME => typeof(TimeSpan),
                     Types.TIMESTAMP => typeof(DateTime),
                     Types.TIMESTAMP_WITH_TIMEZONE => typeof(DateTimeOffset),
@@ -214,7 +214,7 @@ namespace IKVM.Jdbc.Data
                     Types.TINYINT => typeof(byte),
                     Types.VARBINARY => typeof(byte[]),
                     Types.VARCHAR => typeof(string),
-                    _ => throw new NotSupportedException(),
+                    _ => throw new NotSupportedException("Unknown type not supported."),
                 };
             }
             catch (SQLException e)
@@ -353,7 +353,7 @@ namespace IKVM.Jdbc.Data
                         var clob_ = ResultSet.getString(column);
                         return ResultSet.wasNull() ? DBNull.Value : clob_;
                     case Types.DATALINK:
-                        throw new NotSupportedException();
+                        throw new NotSupportedException("DATALINK type not supported.");
                     case Types.DATE:
                         var date_ = ResultSet.getDate(column);
                         return ResultSet.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(date_.getTime()).DateTime;
@@ -397,16 +397,16 @@ namespace IKVM.Jdbc.Data
                         var nvarchar_ = ResultSet.getString(column);
                         return ResultSet.wasNull() ? DBNull.Value : nvarchar_;
                     case Types.OTHER:
-                        throw new NotSupportedException();
+                        throw new NotSupportedException("OTHER type not supported.");
                     case Types.REAL:
                         var real_ = ResultSet.getFloat(column);
                         return ResultSet.wasNull() ? DBNull.Value : real_;
                     case Types.REF:
-                        throw new NotSupportedException();
+                        throw new NotSupportedException("REF type not supported.");
                     case Types.REF_CURSOR:
-                        throw new NotSupportedException();
+                        throw new NotSupportedException("REF_CURSOR type not supported.");
                     case Types.ROWID:
-                        throw new NotImplementedException();
+                        throw new NotImplementedException("ROWID type not supported.");
                     case Types.SMALLINT:
                         var smallint_ = ResultSet.getShort(column);
                         return ResultSet.wasNull() ? DBNull.Value : smallint_;
@@ -437,7 +437,7 @@ namespace IKVM.Jdbc.Data
                         var varchar_ = ResultSet.getString(column);
                         return ResultSet.wasNull() ? DBNull.Value : varchar_;
                     default:
-                        throw new NotSupportedException();
+                        throw new NotSupportedException("Type not supported.");
                 }
             }
             catch (SQLException e)
