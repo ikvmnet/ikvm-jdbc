@@ -1,19 +1,15 @@
 ﻿using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using com.sun.org.apache.xerces.@internal.impl.dv.xs;
 
 using java.math;
 
 namespace IKVM.Jdbc.Data
 {
-
-    static class JdbcTypeConversion
+    /// <summary>
+    /// Various utilities to convert between JDBC types to .NET types.
+    /// </summary>
+    public static class JdbcTypeConversion
     {
 
         /// <summary>
