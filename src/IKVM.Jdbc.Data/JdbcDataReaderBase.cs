@@ -297,6 +297,11 @@ namespace IKVM.Jdbc.Data
         /// <returns></returns>
         public object? GetObject(int ordinal)
         {
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= ResultSet.getMetaData().getColumnCount())
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
             var column = ordinal + 1;
             var object_ = ResultSet.getObject(column);
             return ResultSet.wasNull() ? null : object_;
