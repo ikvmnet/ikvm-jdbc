@@ -414,7 +414,7 @@ namespace IKVM.Jdbc.Data
                         var sqlxml_ = ResultSet.getSQLXML(column);
                         return ResultSet.wasNull() ? DBNull.Value : XDocument.Parse(sqlxml_.getString());
                     case Types.STRUCT:
-                        throw new NotSupportedException();
+                        throw new NotSupportedException("STRUCT type not supported.");
                     case Types.TIME:
                         var time_ = ResultSet.getTime(column);
                         return ResultSet.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(time_.getTime()).TimeOfDay;

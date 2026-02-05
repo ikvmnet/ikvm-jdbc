@@ -47,7 +47,7 @@ namespace IKVM.Jdbc.Data
             DbType.Xml => JDBCType.SQLXML,
             DbType.DateTime2 => JDBCType.TIMESTAMP,
             DbType.DateTimeOffset => JDBCType.TIMESTAMP_WITH_TIMEZONE,
-            _ => throw new NotSupportedException(),
+            _ => throw new NotSupportedException("Type not supported."),
         };
 
     }
