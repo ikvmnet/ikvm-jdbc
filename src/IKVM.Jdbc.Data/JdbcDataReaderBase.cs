@@ -603,6 +603,16 @@ namespace IKVM.Jdbc.Data
                     var value = GetString(ordinal);
                     return (T)(object)value;
                 }
+                else if (typeof(T) == typeof(DateTimeOffset))
+                {
+                    var value = GetDateTimeOffset(ordinal);
+                    return (T)(object)value;
+                }
+                else if (typeof(T) == typeof(DateTimeOffset?))
+                {
+                    var value = GetNullableDateTimeOffset(ordinal);
+                    return value is not null ? (T)(object)value : default;
+                }
                 else if (typeof(T) == typeof(DateTime))
                 {
                     var value = GetDateTime(ordinal);
