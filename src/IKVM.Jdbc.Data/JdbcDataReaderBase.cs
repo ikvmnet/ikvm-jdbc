@@ -1690,14 +1690,14 @@ namespace IKVM.Jdbc.Data
                         if (ResultSet.wasNull())
                             return null;
 
-                        return checked((short?)long_);
+                        return checked((short)long_);
 
                     case Types.INTEGER:
                         var int_ = ResultSet.getInt(column);
                         if (ResultSet.wasNull())
                             return null;
 
-                        return checked((short?)int_);
+                        return checked((short)int_);
 
                     case Types.SMALLINT:
                         var short_ = ResultSet.getShort(column);
@@ -1784,27 +1784,27 @@ namespace IKVM.Jdbc.Data
                         if (ResultSet.wasNull())
                             return null;
 
-                        return checked((ushort?)long_);
+                        return checked((ushort)long_);
 
                     case Types.INTEGER:
                         var int_ = ResultSet.getInt(column);
                         if (ResultSet.wasNull())
                             return null;
 
-                        return checked((ushort?)int_);
+                        return checked((ushort)int_);
 
                     case Types.SMALLINT:
                         var short_ = ResultSet.getShort(column);
                         if (ResultSet.wasNull())
                             return null;
 
-                        return checked((ushort?)short_);
+                        return checked((ushort)short_);
                     case Types.TINYINT:
                         var byte_ = ResultSet.getByte(column);
                         if (ResultSet.wasNull())
                             return null;
 
-                        return checked((ushort?)byte_);
+                        return checked((ushort)byte_);
 
                     case Types.STRUCT:
                         var struct_ = ResultSet.getObject(column);
@@ -1878,7 +1878,7 @@ namespace IKVM.Jdbc.Data
                         if (ResultSet.wasNull())
                             return null;
 
-                        return checked((int?)long_);
+                        return checked((int)long_);
 
                     case Types.INTEGER:
                         var int_ = ResultSet.getInt(column);
@@ -1973,26 +1973,28 @@ namespace IKVM.Jdbc.Data
                         if (ResultSet.wasNull())
                             return null;
 
-                        return checked((uint?)long_);
+                        return checked((uint)long_);
 
                     case Types.INTEGER:
                         var int_ = ResultSet.getInt(column);
                         if (ResultSet.wasNull())
                             return null;
 
-                        return checked((uint?)int_);
+                        return checked((uint)int_);
+
                     case Types.SMALLINT:
                         var short_ = ResultSet.getShort(column);
                         if (ResultSet.wasNull())
                             return null;
 
-                        return checked((uint?)short_);
+                        return checked((uint)short_);
+
                     case Types.TINYINT:
                         var byte_ = ResultSet.getByte(column);
                         if (ResultSet.wasNull())
                             return null;
 
-                        return checked((uint?)byte_);
+                        return checked((uint)byte_);
 
                     case Types.STRUCT:
                         var struct_ = ResultSet.getObject(column);
@@ -2067,18 +2069,21 @@ namespace IKVM.Jdbc.Data
                             return null;
 
                         return long_;
+
                     case Types.INTEGER:
                         var int_ = ResultSet.getInt(column);
                         if (ResultSet.wasNull())
                             return null;
 
                         return int_;
+
                     case Types.SMALLINT:
                         var short_ = ResultSet.getShort(column);
                         if (ResultSet.wasNull())
                             return null;
 
                         return short_;
+
                     case Types.TINYINT:
                         var byte_ = ResultSet.getByte(column);
                         if (ResultSet.wasNull())
@@ -2159,18 +2164,21 @@ namespace IKVM.Jdbc.Data
                             return null;
 
                         return checked((ulong?)long_);
+
                     case Types.INTEGER:
                         var int_ = ResultSet.getInt(column);
                         if (ResultSet.wasNull())
                             return null;
 
                         return checked((ulong?)int_);
+
                     case Types.SMALLINT:
                         var short_ = ResultSet.getShort(column);
                         if (ResultSet.wasNull())
                             return null;
 
                         return checked((ulong?)short_);
+
                     case Types.TINYINT:
                         var byte_ = ResultSet.getByte(column);
                         if (ResultSet.wasNull())
