@@ -659,7 +659,7 @@ namespace IKVM.Jdbc.Data
                     if (value is T t)
                         return t;
 
-                    throw new JdbcException($"Could not coerce underlying JDBC value to {typeof(T).FullName}.");
+                    throw new JdbcException($"Could not coerce underlying JDBC value of type {value.GetType().FullName} to {typeof(T).FullName}.");
                 }
             }
             catch (SQLException e)
