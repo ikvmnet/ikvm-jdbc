@@ -359,7 +359,7 @@ namespace IKVM.Jdbc.Data
                         return ResultSet.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(date_.getTime()).DateTime;
                     case Types.DECIMAL:
                         var decimal_ = ResultSet.getBigDecimal(column);
-                        return ResultSet.wasNull() ? DBNull.Value : decimal.Parse(decimal_.toString());
+                        return ResultSet.wasNull() ? DBNull.Value : JdbcTypeConversion.ToDecimal(decimal_);
                     case Types.DISTINCT:
                         throw new NotImplementedException();
                     case Types.DOUBLE:
