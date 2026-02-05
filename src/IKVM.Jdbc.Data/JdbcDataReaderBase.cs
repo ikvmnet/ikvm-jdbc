@@ -302,9 +302,16 @@ namespace IKVM.Jdbc.Data
             if (ordinal >= ResultSet.getMetaData().getColumnCount())
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
 
-            var column = ordinal + 1;
-            var object_ = ResultSet.getObject(column);
-            return ResultSet.wasNull() ? null : object_;
+            try
+            {
+                var column = ordinal + 1;
+                var object_ = ResultSet.getObject(column);
+                return ResultSet.wasNull() ? null : object_;
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
         }
 
         /// <summary>
@@ -314,8 +321,18 @@ namespace IKVM.Jdbc.Data
         /// <returns></returns>
         public object? GetObject(string name)
         {
-            var object_ = ResultSet.getObject(name);
-            return ResultSet.wasNull() ? null : object_;
+            if (name is null)
+                throw new ArgumentNullException(nameof(name));
+
+            try
+            {
+                var object_ = ResultSet.getObject(name);
+                return ResultSet.wasNull() ? null : object_;
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
         }
 
         /// <summary>
