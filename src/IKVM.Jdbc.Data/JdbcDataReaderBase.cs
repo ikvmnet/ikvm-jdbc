@@ -3,7 +3,6 @@ using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Data.SqlTypes;
 using System.Globalization;
 using System.IO;
 using System.Xml.Linq;
@@ -718,7 +717,7 @@ namespace IKVM.Jdbc.Data
         /// <returns></returns>
         public override bool GetBoolean(int ordinal)
         {
-            return GetNullableBoolean(ordinal) ?? throw new SqlNullValueException();
+            return GetNullableBoolean(ordinal) ?? throw new JdbcNullValueException();
         }
 
         /// <summary>
@@ -775,7 +774,7 @@ namespace IKVM.Jdbc.Data
 
                         return long_ != 0;
                     default:
-                        throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Boolean.");
+                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Boolean.");
                 }
             }
             catch (SQLException e)
@@ -787,7 +786,7 @@ namespace IKVM.Jdbc.Data
         /// <inheritdoc />
         public override byte GetByte(int ordinal)
         {
-            return GetNullableByte(ordinal) ?? throw new SqlNullValueException();
+            return GetNullableByte(ordinal) ?? throw new JdbcNullValueException();
         }
 
         /// <inheritdoc />
@@ -822,7 +821,7 @@ namespace IKVM.Jdbc.Data
 
                         return byte_;
                     default:
-                        throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Byte.");
+                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Byte.");
                 }
             }
             catch (SQLException e)
@@ -855,11 +854,11 @@ namespace IKVM.Jdbc.Data
                     case Types.BLOB:
                         var b = ResultSet.getBytes(column);
                         if (ResultSet.wasNull())
-                            throw new SqlNullValueException();
+                            throw new JdbcNullValueException();
 
                         return b;
                     default:
-                        throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Byte[].");
+                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Byte[].");
                 }
             }
             catch (SQLException e)
@@ -1026,17 +1025,17 @@ namespace IKVM.Jdbc.Data
                     case Types.CHAR:
                         var char_ = ResultSet.getByte(column);
                         if (ResultSet.wasNull())
-                            throw new SqlNullValueException();
+                            throw new JdbcNullValueException();
 
                         return (char)char_;
                     case Types.NCHAR:
                         var nchar_ = ResultSet.getByte(column);
                         if (ResultSet.wasNull())
-                            throw new SqlNullValueException();
+                            throw new JdbcNullValueException();
 
                         return (char)nchar_;
                     default:
-                        throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Char.");
+                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Char.");
                 }
             }
             catch (SQLException e)
@@ -1072,11 +1071,11 @@ namespace IKVM.Jdbc.Data
                     case Types.CLOB:
                         var b = ResultSet.getString(column);
                         if (ResultSet.wasNull())
-                            throw new SqlNullValueException();
+                            throw new JdbcNullValueException();
 
                         return b.ToCharArray();
                     default:
-                        throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Char[].");
+                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Char[].");
                 }
             }
             catch (SQLException e)
@@ -1228,7 +1227,7 @@ namespace IKVM.Jdbc.Data
         /// <inheritdoc />
         public override DateTime GetDateTime(int ordinal)
         {
-            return GetNullableDateTime(ordinal) ?? throw new SqlNullValueException();
+            return GetNullableDateTime(ordinal) ?? throw new JdbcNullValueException();
         }
 
         /// <inheritdoc />
@@ -1265,7 +1264,7 @@ namespace IKVM.Jdbc.Data
                         if (DateTimeOffset.TryParse(string_, null, DateTimeStyles.AssumeLocal, out var d))
                             return d.DateTime;
 
-                        throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateTime.");
+                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateTime.");
 
                     case Types.TIME_WITH_TIMEZONE:
                         var offsettime_ = (OffsetTime?)ResultSet.getObject(column, typeof(OffsetTime));
@@ -1282,7 +1281,7 @@ namespace IKVM.Jdbc.Data
                         return new DateTimeOffset(offsetdatetime_.getYear(), offsetdatetime_.getMonthValue(), offsetdatetime_.getDayOfMonth(), offsetdatetime_.getHour(), offsetdatetime_.getMinute(), offsetdatetime_.getSecond(), offsetdatetime_.getNano() * 1000000, TimeSpan.FromSeconds(offsetdatetime_.getOffset().getTotalSeconds())).DateTime;
 
                     default:
-                        throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateTime.");
+                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateTime.");
                 }
             }
             catch (SQLException e)
@@ -1294,7 +1293,7 @@ namespace IKVM.Jdbc.Data
         /// <inheritdoc />
         TimeSpan GetTimeSpan(int ordinal)
         {
-            return GetNullableTimeSpan(ordinal) ?? throw new SqlNullValueException();
+            return GetNullableTimeSpan(ordinal) ?? throw new JdbcNullValueException();
         }
 
         /// <inheritdoc />
@@ -1317,7 +1316,7 @@ namespace IKVM.Jdbc.Data
 
                         return TimeSpan.FromMilliseconds(date_.getTime());
                     default:
-                        throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into TimeSpan.");
+                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into TimeSpan.");
                 }
             }
             catch (SQLException e)
@@ -1331,7 +1330,7 @@ namespace IKVM.Jdbc.Data
         /// <inheritdoc />
         DateOnly GetDateOnly(int ordinal)
         {
-            return GetNullableDateOnly(ordinal) ?? throw new SqlNullValueException();
+            return GetNullableDateOnly(ordinal) ?? throw new JdbcNullValueException();
         }
 
         /// <inheritdoc />
@@ -1371,7 +1370,7 @@ namespace IKVM.Jdbc.Data
                         if (DateTimeOffset.TryParse(string_, null, DateTimeStyles.AssumeLocal, out var d))
                             return DateOnly.FromDateTime(d.DateTime);
 
-                        throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateOnly.");
+                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateOnly.");
 
                     case Types.TIMESTAMP_WITH_TIMEZONE:
                         var offsetdatetime_ = (OffsetDateTime?)ResultSet.getObject(column, typeof(OffsetDateTime));
@@ -1380,7 +1379,7 @@ namespace IKVM.Jdbc.Data
 
                         return new DateOnly(offsetdatetime_.getYear(), offsetdatetime_.getMonthValue(), offsetdatetime_.getDayOfMonth());
                     default:
-                        throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateOnly.");
+                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateOnly.");
                 }
             }
             catch (SQLException e)
@@ -1392,7 +1391,7 @@ namespace IKVM.Jdbc.Data
         /// <inheritdoc />
         TimeOnly GetTimeOnly(int ordinal)
         {
-            return GetNullableTimeOnly(ordinal) ?? throw new SqlNullValueException();
+            return GetNullableTimeOnly(ordinal) ?? throw new JdbcNullValueException();
         }
 
         /// <inheritdoc />
@@ -1411,17 +1410,17 @@ namespace IKVM.Jdbc.Data
                     case Types.TIME:
                         var date_ = ResultSet.getDate(column);
                         if (ResultSet.wasNull())
-                            throw new SqlNullValueException();
+                            throw new JdbcNullValueException();
 
                         return TimeOnly.FromDateTime(DateTimeOffset.FromUnixTimeMilliseconds(date_.getTime()).DateTime);
                     case Types.TIMESTAMP:
                         var timestamp_ = ResultSet.getTimestamp(column);
                         if (ResultSet.wasNull())
-                            throw new SqlNullValueException();
+                            throw new JdbcNullValueException();
 
                         return TimeOnly.FromDateTime(DateTimeOffset.FromUnixTimeMilliseconds(timestamp_.getTime()).DateTime);
                     default:
-                        throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into TimeOnly.");
+                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into TimeOnly.");
                 }
             }
             catch (SQLException e)
@@ -1435,7 +1434,7 @@ namespace IKVM.Jdbc.Data
         /// <inheritdoc />
         public override decimal GetDecimal(int ordinal)
         {
-            return GetNullableDecimal(ordinal) ?? throw new SqlNullValueException();
+            return GetNullableDecimal(ordinal) ?? throw new JdbcNullValueException();
         }
 
         /// <summary>
@@ -1502,7 +1501,7 @@ namespace IKVM.Jdbc.Data
                         return checked((decimal)byte_);
 
                     default:
-                        throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Decimal.");
+                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Decimal.");
                 }
             }
             catch (SQLException e)
@@ -1514,7 +1513,7 @@ namespace IKVM.Jdbc.Data
         /// <inheritdoc />
         public override double GetDouble(int ordinal)
         {
-            return GetNullableDouble(ordinal) ?? throw new SqlNullValueException();
+            return GetNullableDouble(ordinal) ?? throw new JdbcNullValueException();
         }
 
         /// <inheritdoc />
@@ -1574,7 +1573,7 @@ namespace IKVM.Jdbc.Data
                         return checked((double)byte_);
 
                     default:
-                        throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Double.");
+                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Double.");
                 }
             }
             catch (SQLException e)
@@ -1586,7 +1585,7 @@ namespace IKVM.Jdbc.Data
         /// <inheritdoc />
         public override float GetFloat(int ordinal)
         {
-            return GetNullableFloat(ordinal) ?? throw new SqlNullValueException();
+            return GetNullableFloat(ordinal) ?? throw new JdbcNullValueException();
         }
 
         /// <inheritdoc />
@@ -1646,7 +1645,7 @@ namespace IKVM.Jdbc.Data
                         return checked((float)byte_);
 
                     default:
-                        throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Single.");
+                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Single.");
                 }
             }
             catch (SQLException e)
@@ -1669,7 +1668,7 @@ namespace IKVM.Jdbc.Data
         /// <inheritdoc />
         public override short GetInt16(int ordinal)
         {
-            return GetNullableInt16(ordinal) ?? throw new SqlNullValueException();
+            return GetNullableInt16(ordinal) ?? throw new JdbcNullValueException();
         }
 
         /// <inheritdoc />
@@ -1749,9 +1748,9 @@ namespace IKVM.Jdbc.Data
                         if (struct_ is java.lang.Boolean jz)
                             return jz.booleanValue() ? (short)1 : (short)0;
 
-                        throw new SqlTypeException($"Could not coerce STRUCT type {struct_.GetType().FullName} into Int16.");
+                        throw new JdbcTypeException($"Could not coerce STRUCT type {struct_.GetType().FullName} into Int16.");
                     default:
-                        throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Int16.");
+                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Int16.");
                 }
             }
             catch (SQLException e)
@@ -1763,7 +1762,7 @@ namespace IKVM.Jdbc.Data
         /// <inheritdoc />
         public ushort GetUInt16(int ordinal)
         {
-            return GetNullableUInt16(ordinal) ?? throw new SqlNullValueException();
+            return GetNullableUInt16(ordinal) ?? throw new JdbcNullValueException();
         }
 
         /// <inheritdoc />
@@ -1843,9 +1842,9 @@ namespace IKVM.Jdbc.Data
                         if (struct_ is java.lang.Boolean jz)
                             return jz.booleanValue() ? (ushort)1 : (ushort)0;
 
-                        throw new SqlTypeException($"Could not coerce STRUCT type {struct_.GetType().FullName} into UInt16.");
+                        throw new JdbcTypeException($"Could not coerce STRUCT type {struct_.GetType().FullName} into UInt16.");
                     default:
-                        throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into UInt16.");
+                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into UInt16.");
                 }
             }
             catch (SQLException e)
@@ -1857,7 +1856,7 @@ namespace IKVM.Jdbc.Data
         /// <inheritdoc />
         public override int GetInt32(int ordinal)
         {
-            return GetNullableInt32(ordinal) ?? throw new SqlNullValueException();
+            return GetNullableInt32(ordinal) ?? throw new JdbcNullValueException();
         }
 
         /// <inheritdoc />
@@ -1938,9 +1937,9 @@ namespace IKVM.Jdbc.Data
                         if (struct_ is java.lang.Boolean jz)
                             return jz.booleanValue() ? (int)1 : (int)0;
 
-                        throw new SqlTypeException($"Could not coerce STRUCT type {struct_.GetType().FullName} into Int32.");
+                        throw new JdbcTypeException($"Could not coerce STRUCT type {struct_.GetType().FullName} into Int32.");
                     default:
-                        throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Int32.");
+                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Int32.");
                 }
             }
             catch (SQLException e)
@@ -1952,7 +1951,7 @@ namespace IKVM.Jdbc.Data
         /// <inheritdoc />
         public uint GetUInt32(int ordinal)
         {
-            return GetNullableUInt32(ordinal) ?? throw new SqlNullValueException();
+            return GetNullableUInt32(ordinal) ?? throw new JdbcNullValueException();
         }
 
         /// <inheritdoc />
@@ -2033,9 +2032,9 @@ namespace IKVM.Jdbc.Data
                         if (struct_ is java.lang.Boolean jz)
                             return jz.booleanValue() ? (uint)1 : (uint)0;
 
-                        throw new SqlTypeException($"Could not coerce STRUCT type {struct_.GetType().FullName} into UInt32.");
+                        throw new JdbcTypeException($"Could not coerce STRUCT type {struct_.GetType().FullName} into UInt32.");
                     default:
-                        throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into UInt32.");
+                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into UInt32.");
                 }
             }
             catch (SQLException e)
@@ -2047,7 +2046,7 @@ namespace IKVM.Jdbc.Data
         /// <inheritdoc />
         public override long GetInt64(int ordinal)
         {
-            return GetNullableInt64(ordinal) ?? throw new SqlNullValueException();
+            return GetNullableInt64(ordinal) ?? throw new JdbcNullValueException();
         }
 
         /// <inheritdoc />
@@ -2128,9 +2127,9 @@ namespace IKVM.Jdbc.Data
                         if (struct_ is java.lang.Boolean jz)
                             return jz.booleanValue() ? (long)1 : (long)0;
 
-                        throw new SqlTypeException($"Could not coerce STRUCT type {struct_.GetType().FullName} into Int64.");
+                        throw new JdbcException($"Could not coerce STRUCT type {struct_.GetType().FullName} into Int64.");
                     default:
-                        throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Int64.");
+                        throw new JdbcException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Int64.");
                 }
             }
             catch (SQLException e)
@@ -2142,7 +2141,7 @@ namespace IKVM.Jdbc.Data
         /// <inheritdoc />
         public ulong GetUInt64(int ordinal)
         {
-            return GetNullableUInt64(ordinal) ?? throw new SqlNullValueException();
+            return GetNullableUInt64(ordinal) ?? throw new JdbcNullValueException();
         }
 
         /// <inheritdoc />
@@ -2223,9 +2222,9 @@ namespace IKVM.Jdbc.Data
                         if (struct_ is java.lang.Boolean jz)
                             return jz.booleanValue() ? (ulong)1 : (ulong)0;
 
-                        throw new SqlTypeException($"Could not coerce STRUCT type {struct_.GetType().FullName} into UInt64.");
+                        throw new JdbcTypeException($"Could not coerce STRUCT type {struct_.GetType().FullName} into UInt64.");
                     default:
-                        throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into UInt64.");
+                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into UInt64.");
                 }
             }
             catch (SQLException e)
@@ -2251,7 +2250,7 @@ namespace IKVM.Jdbc.Data
                     case Types.NCHAR:
                         var char_ = (char)ResultSet.getByte(column);
                         if (ResultSet.wasNull())
-                            throw new SqlNullValueException();
+                            throw new JdbcNullValueException();
 
                         return char_.ToString();
                     case Types.VARCHAR:
@@ -2262,11 +2261,11 @@ namespace IKVM.Jdbc.Data
                     case Types.NCLOB:
                         var string_ = ResultSet.getString(column);
                         if (ResultSet.wasNull())
-                            throw new SqlNullValueException();
+                            throw new JdbcNullValueException();
 
                         return string_;
                     default:
-                        throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into String.");
+                        throw new JdbcTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into String.");
                 }
             }
             catch (SQLException e)
