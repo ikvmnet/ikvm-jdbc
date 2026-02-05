@@ -13,7 +13,9 @@ namespace IKVM.Jdbc.Data
     {
 
         /// <summary>
-        /// Converts the <see cref="BigDecimal"/> value to a <see cref="decimal"/>. This fails with <see cref="ArgumentOutOfRangeException"/> for <see cref="BigDecimal"/> instances with more than 96 bits of integer data, and outside the .NET decimal scale limitation of 28.
+        /// Converts the <see cref="BigDecimal"/> value to a <see cref="decimal"/>. This fails with <see
+        /// cref="ArgumentOutOfRangeException"/> for <see cref="BigDecimal"/> instances with more than 96 bits of
+        /// integer data, and outside the .NET decimal scale limitation of 28.
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
