@@ -51,7 +51,8 @@ namespace IKVM.Jdbc.Data
         public JdbcConnection(string url) :
             this(url, null)
         {
-
+            if (url is null)
+                throw new ArgumentNullException(nameof(url));
         }
 
         /// <summary>
@@ -61,6 +62,9 @@ namespace IKVM.Jdbc.Data
         /// <param name="leaveOpen"></param>
         public JdbcConnection(Connection connection, bool leaveOpen = false)
         {
+            if (connection is null)
+                throw new ArgumentNullException(nameof(connection));
+
             _url = connection.getMetaData().getURL();
             _connection = connection;
             _leaveOpen = leaveOpen;

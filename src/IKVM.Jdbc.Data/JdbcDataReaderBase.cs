@@ -443,10 +443,10 @@ namespace IKVM.Jdbc.Data
                         return ResultSet.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(timestamp_.getTime()).DateTime;
                     case Types.TIME_WITH_TIMEZONE:
                         var offsettime_ = (OffsetTime?)ResultSet.getObject(column, typeof(OffsetTime));
-                        return ResultSet.wasNull() || offsettime_ is null ? DBNull.Value : new DateTimeOffset(0, 0, 0, offsettime_.getHour(), offsettime_.getMinute(), offsettime_.getSecond(), offsettime_.getNano() * 1000000, TimeSpan.FromSeconds(offsettime_.getOffset().getTotalSeconds())).TimeOfDay;
+                        return ResultSet.wasNull() || offsettime_ is null ? DBNull.Value : new DateTimeOffset(0, 0, 0, offsettime_.getHour(), offsettime_.getMinute(), offsettime_.getSecond(), offsettime_.getNano() / 1000000, TimeSpan.FromSeconds(offsettime_.getOffset().getTotalSeconds())).TimeOfDay;
                     case Types.TIMESTAMP_WITH_TIMEZONE:
                         var offsetdatetime_ = (OffsetDateTime?)ResultSet.getObject(column, typeof(OffsetDateTime));
-                        return ResultSet.wasNull() || offsetdatetime_ is null ? DBNull.Value : new DateTimeOffset(offsetdatetime_.getYear(), offsetdatetime_.getMonthValue(), offsetdatetime_.getDayOfMonth(), offsetdatetime_.getHour(), offsetdatetime_.getMinute(), offsetdatetime_.getSecond(), offsetdatetime_.getNano() * 1000000, TimeSpan.FromSeconds(offsetdatetime_.getOffset().getTotalSeconds()));
+                        return ResultSet.wasNull() || offsetdatetime_ is null ? DBNull.Value : new DateTimeOffset(offsetdatetime_.getYear(), offsetdatetime_.getMonthValue(), offsetdatetime_.getDayOfMonth(), offsetdatetime_.getHour(), offsetdatetime_.getMinute(), offsetdatetime_.getSecond(), offsetdatetime_.getNano() / 1000000, TimeSpan.FromSeconds(offsetdatetime_.getOffset().getTotalSeconds()));
                     case Types.TINYINT:
                         var tinyint_ = ResultSet.getByte(column);
                         return ResultSet.wasNull() ? DBNull.Value : tinyint_;
@@ -1431,13 +1431,13 @@ namespace IKVM.Jdbc.Data
                 {
                     case Types.DATE:
                         var date_ = ResultSet.getDate(column);
-                        return ResultSet.wasNull() ? null : DateTimeOffset.FromUnixTimeMilliseconds(date_.getTime()).DateTime;
+                        return ResultSet.wasNull() ? null : DateTimeOffset.FromUnixTimeMilliseconds(date_.getTime()).UtcDateTime;
                     case Types.TIME:
                         var time_ = ResultSet.getTime(column);
-                        return ResultSet.wasNull() ? null : DateTimeOffset.FromUnixTimeMilliseconds(time_.getTime()).DateTime;
+                        return ResultSet.wasNull() ? null : DateTimeOffset.FromUnixTimeMilliseconds(time_.getTime()).UtcDateTime;
                     case Types.TIMESTAMP:
                         var timestamp_ = ResultSet.getTimestamp(column);
-                        return ResultSet.wasNull() ? null : DateTimeOffset.FromUnixTimeMilliseconds(timestamp_.getTime()).DateTime;
+                        return ResultSet.wasNull() ? null : DateTimeOffset.FromUnixTimeMilliseconds(timestamp_.getTime()).UtcDateTime;
                     case Types.VARCHAR:
                     case Types.NVARCHAR:
                     case Types.LONGVARCHAR:
@@ -1447,8 +1447,8 @@ namespace IKVM.Jdbc.Data
                             return null;
 
                         // parse as datetimeoffset, and then return dateonly value
-                        if (DateTimeOffset.TryParse(string_, null, DateTimeStyles.AssumeLocal, out var d))
-                            return d.DateTime;
+                        if (DateTimeOffset.TryParse(string_, null, DateTimeStyles.AssumeUniversal, out var d))
+                            return d.UtcDateTime;
 
                         throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateTime.");
 
@@ -1457,14 +1457,14 @@ namespace IKVM.Jdbc.Data
                         if (ResultSet.wasNull() || offsettime_ is null)
                             return null;
 
-                        return new DateTimeOffset(0, 0, 0, offsettime_.getHour(), offsettime_.getMinute(), offsettime_.getSecond(), offsettime_.getNano() * 1000000, TimeSpan.FromSeconds(offsettime_.getOffset().getTotalSeconds())).DateTime;
+                        return new DateTimeOffset(0, 0, 0, offsettime_.getHour(), offsettime_.getMinute(), offsettime_.getSecond(), offsettime_.getNano() / 1000000, TimeSpan.FromSeconds(offsettime_.getOffset().getTotalSeconds())).UtcDateTime;
 
                     case Types.TIMESTAMP_WITH_TIMEZONE:
                         var offsetdatetime_ = (OffsetDateTime?)ResultSet.getObject(column, typeof(OffsetDateTime));
                         if (ResultSet.wasNull() || offsetdatetime_ is null)
                             return null;
 
-                        return new DateTimeOffset(offsetdatetime_.getYear(), offsetdatetime_.getMonthValue(), offsetdatetime_.getDayOfMonth(), offsetdatetime_.getHour(), offsetdatetime_.getMinute(), offsetdatetime_.getSecond(), offsetdatetime_.getNano() * 1000000, TimeSpan.FromSeconds(offsetdatetime_.getOffset().getTotalSeconds())).DateTime;
+                        return new DateTimeOffset(offsetdatetime_.getYear(), offsetdatetime_.getMonthValue(), offsetdatetime_.getDayOfMonth(), offsetdatetime_.getHour(), offsetdatetime_.getMinute(), offsetdatetime_.getSecond(), offsetdatetime_.getNano() / 1000000, TimeSpan.FromSeconds(offsetdatetime_.getOffset().getTotalSeconds())).UtcDateTime;
 
                     default:
                         throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateTime.");
@@ -1537,13 +1537,13 @@ namespace IKVM.Jdbc.Data
                         if (ResultSet.wasNull())
                             return null;
 
-                        return DateOnly.FromDateTime(DateTimeOffset.FromUnixTimeMilliseconds(date_.getTime()).DateTime);
+                        return DateOnly.FromDateTime(DateTimeOffset.FromUnixTimeMilliseconds(date_.getTime()).UtcDateTime);
                     case Types.TIMESTAMP:
                         var timestamp_ = ResultSet.getTimestamp(column);
                         if (ResultSet.wasNull())
                             return null;
 
-                        return DateOnly.FromDateTime(DateTimeOffset.FromUnixTimeMilliseconds(timestamp_.getTime()).DateTime);
+                        return DateOnly.FromDateTime(DateTimeOffset.FromUnixTimeMilliseconds(timestamp_.getTime()).UtcDateTime);
                     case Types.VARCHAR:
                     case Types.NVARCHAR:
                     case Types.LONGVARCHAR:
@@ -1554,7 +1554,7 @@ namespace IKVM.Jdbc.Data
 
                         // parse as datetimeoffset, and then return dateonly value
                         if (DateTimeOffset.TryParse(string_, null, DateTimeStyles.AssumeLocal, out var d))
-                            return DateOnly.FromDateTime(d.DateTime);
+                            return DateOnly.FromDateTime(d.UtcDateTime);
 
                         throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateOnly.");
 

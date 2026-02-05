@@ -10,17 +10,18 @@
     </ItemGroup>
 
     <ItemGroup>
-        <MavenReference Include="org.xerial:sqlite-jdbc" Version="3.49.1.0" />
-        <MavenReference Include="org.postgresql:postgresql" Version="42.7.5" />
-    </ItemGroup>
-
-    <ItemGroup>
         <PackageReference Include="FluentAssertions" Version="8.8.0" />
         <PackageReference Include="IKVM.Maven.Sdk" Version="1.11.0">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <MavenReference Include="org.xerial:sqlite-jdbc" Version="3.49.1.0" />
+        <MavenReference Include="com.h2database:h2" Version="1.4.200" />
+        <MavenReference Include="org.postgresql:postgresql" Version="42.7.5" />
     </ItemGroup>
 
 </Project>

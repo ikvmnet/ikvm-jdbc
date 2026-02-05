@@ -4,8 +4,6 @@ using FluentAssertions;
 
 using IKVM.Jdbc.Data.Internal;
 
-using java.sql;
-
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace IKVM.Jdbc.Data.Tests
@@ -17,19 +15,25 @@ namespace IKVM.Jdbc.Data.Tests
 
         static JdbcCommandTests()
         {
+            ikvm.runtime.Startup.addBootClassPathAssembly(typeof(org.h2.Driver).Assembly);
             ikvm.runtime.Startup.addBootClassPathAssembly(typeof(org.sqlite.JDBC).Assembly);
             ikvm.runtime.Startup.addBootClassPathAssembly(typeof(org.postgresql.jdbc.PgConnection).Assembly);
         }
 
-        JdbcConnection CreateTestConnection()
+        JdbcConnection CreateSqliteTestConnection()
         {
-            return new JdbcConnection(org.sqlite.JDBC.createConnection("jdbc:sqlite:sample.db", new java.util.Properties()));
+            return new JdbcConnection("jdbc:sqlite:sample.db");
+        }
+
+        JdbcConnection CreateH2TestConnection()
+        {
+            return new JdbcConnection("jdbc:h2:mem:sample");
         }
 
         [TestMethod]
         public void CanGetColumnNames()
         {
-            using var cnn = CreateTestConnection();
+            using var cnn = CreateSqliteTestConnection();
             cnn.Open();
             using var cmd = cnn.CreateCommand();
             cmd.CommandText = "drop table if exists CanGetColumnNames";
@@ -46,7 +50,7 @@ namespace IKVM.Jdbc.Data.Tests
         [TestMethod]
         public void CanGetPrimitiveFieldValuesByType()
         {
-            using var cnn = CreateTestConnection();
+            using var cnn = CreateSqliteTestConnection();
             cnn.Open();
 
             using var cmd = cnn.CreateCommand();
@@ -58,6 +62,7 @@ namespace IKVM.Jdbc.Data.Tests
             cmd.ExecuteNonQuery();
             cmd.CommandText = "select * from CanGetPrimitiveFieldValuesByType";
             using var rdr = cmd.ExecuteReader();
+            rdr.Read().Should().BeTrue();
             rdr.FieldCount.Should().Be(1);
             rdr.GetName(0).Should().Be("id");
             rdr.GetFieldValue<int>(0).Should().Be(1);
@@ -66,7 +71,7 @@ namespace IKVM.Jdbc.Data.Tests
         [TestMethod]
         public void CanGetNullablePrimitiveFieldValuesByType()
         {
-            using var cnn = CreateTestConnection();
+            using var cnn = CreateSqliteTestConnection();
             cnn.Open();
 
             using var cmd = cnn.CreateCommand();
@@ -78,6 +83,7 @@ namespace IKVM.Jdbc.Data.Tests
             cmd.ExecuteNonQuery();
             cmd.CommandText = "select * from CanGetPrimitiveFieldValuesByType";
             using var rdr = cmd.ExecuteReader();
+            rdr.Read().Should().BeTrue();
             rdr.FieldCount.Should().Be(1);
             rdr.GetName(0).Should().Be("id");
             rdr.GetFieldValue<int?>(0).Should().BeNull();
@@ -86,20 +92,67 @@ namespace IKVM.Jdbc.Data.Tests
         [TestMethod]
         public void CanGetStringAsDateTime()
         {
-            using var cnn = CreateTestConnection();
+            using var cnn = CreateSqliteTestConnection();
             cnn.Open();
 
             using var cmd = cnn.CreateCommand();
             cmd.CommandText = "select current_timestamp";
             using var rdr = cmd.ExecuteReader();
+            rdr.Read().Should().BeTrue();
             rdr.FieldCount.Should().Be(1);
             rdr.GetFieldValue<DateTime>(0).Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
         }
 
         [TestMethod]
+        public void CanGetDateAsDateTime()
+        {
+            using var cnn = CreateH2TestConnection();
+            cnn.Open();
+
+            using var cmd = cnn.CreateCommand();
+            cmd.CommandText = "SELECT CURRENT_TIMESTAMP";
+            using var rdr = cmd.ExecuteReader();
+            rdr.Read().Should().BeTrue();
+            rdr.FieldCount.Should().Be(1);
+            rdr.GetFieldValue<DateTime>(0).Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
+        }
+
+#if NET
+
+        [TestMethod]
+        public void CanGetDateAsDateOnly()
+        {
+            using var cnn = CreateH2TestConnection();
+            cnn.Open();
+
+            using var cmd = cnn.CreateCommand();
+            cmd.CommandText = "SELECT CURRENT_DATE";
+            using var rdr = cmd.ExecuteReader();
+            rdr.Read().Should().BeTrue();
+            rdr.FieldCount.Should().Be(1);
+            rdr.GetFieldValue<DateOnly>(0).Should().Be(DateOnly.FromDateTime(DateTime.Today.Date));
+        }
+
+        [TestMethod]
+        public void CanGetStringAsDateOnly()
+        {
+            using var cnn = CreateSqliteTestConnection();
+            cnn.Open();
+
+            using var cmd = cnn.CreateCommand();
+            cmd.CommandText = "select current_date";
+            using var rdr = cmd.ExecuteReader();
+            rdr.Read().Should().BeTrue();
+            rdr.FieldCount.Should().Be(1);
+            rdr.GetFieldValue<DateOnly>(0).Should().Be(DateOnly.FromDateTime(DateTime.Today.Date));
+        }
+
+#endif
+
+        [TestMethod]
         public void CanGetBytesToArray()
         {
-            using var cnn = CreateTestConnection();
+            using var cnn = CreateSqliteTestConnection();
             cnn.Open();
 
             using var cmd = cnn.CreateCommand();
@@ -111,6 +164,7 @@ namespace IKVM.Jdbc.Data.Tests
             cmd.ExecuteNonQuery();
             cmd.CommandText = "select * from CanGetBytesToArray";
             using var rdr = cmd.ExecuteReader();
+            rdr.Read().Should().BeTrue();
             rdr.FieldCount.Should().Be(2);
             rdr.GetName(0).Should().Be("id");
             rdr.GetName(1).Should().Be("data");
@@ -127,7 +181,7 @@ namespace IKVM.Jdbc.Data.Tests
         [TestMethod]
         public void CanGetBytesToSpan()
         {
-            using var cnn = CreateTestConnection();
+            using var cnn = CreateSqliteTestConnection();
             cnn.Open();
 
             using var cmd = cnn.CreateCommand();
@@ -139,6 +193,7 @@ namespace IKVM.Jdbc.Data.Tests
             cmd.ExecuteNonQuery();
             cmd.CommandText = "select * from CanGetBytesToSpan";
             using var rdr = cmd.ExecuteReader();
+            rdr.Read().Should().BeTrue();
             rdr.FieldCount.Should().Be(2);
             rdr.GetName(0).Should().Be("id");
             rdr.GetName(1).Should().Be("data");
@@ -155,7 +210,7 @@ namespace IKVM.Jdbc.Data.Tests
         [TestMethod]
         public void CanGetBytesToStream()
         {
-            using var cnn = CreateTestConnection();
+            using var cnn = CreateSqliteTestConnection();
             cnn.Open();
 
             using var cmd = cnn.CreateCommand();
@@ -167,6 +222,7 @@ namespace IKVM.Jdbc.Data.Tests
             cmd.ExecuteNonQuery();
             cmd.CommandText = "select * from CanGetBytesToStream";
             using var rdr = cmd.ExecuteReader();
+            rdr.Read().Should().BeTrue();
             rdr.FieldCount.Should().Be(2);
             rdr.GetName(0).Should().Be("id");
             rdr.GetName(1).Should().Be("data");
@@ -182,7 +238,7 @@ namespace IKVM.Jdbc.Data.Tests
         [TestMethod]
         public void CanGetCharsToArray()
         {
-            using var cnn = CreateTestConnection();
+            using var cnn = CreateSqliteTestConnection();
             cnn.Open();
 
             using var cmd = cnn.CreateCommand();
@@ -194,6 +250,7 @@ namespace IKVM.Jdbc.Data.Tests
             cmd.ExecuteNonQuery();
             cmd.CommandText = "select * from CanGetCharsToArray";
             using var rdr = cmd.ExecuteReader();
+            rdr.Read().Should().BeTrue();
             rdr.FieldCount.Should().Be(2);
             rdr.GetName(0).Should().Be("id");
             rdr.GetName(1).Should().Be("data");
@@ -210,7 +267,7 @@ namespace IKVM.Jdbc.Data.Tests
         [TestMethod]
         public void CanGetCharsToSpan()
         {
-            using var cnn = CreateTestConnection();
+            using var cnn = CreateSqliteTestConnection();
             cnn.Open();
 
             using var cmd = cnn.CreateCommand();
@@ -222,6 +279,7 @@ namespace IKVM.Jdbc.Data.Tests
             cmd.ExecuteNonQuery();
             cmd.CommandText = "select * from CanGetCharsToSpan";
             using var rdr = cmd.ExecuteReader();
+            rdr.Read().Should().BeTrue();
             rdr.FieldCount.Should().Be(2);
             rdr.GetName(0).Should().Be("id");
             rdr.GetName(1).Should().Be("data");
@@ -238,7 +296,7 @@ namespace IKVM.Jdbc.Data.Tests
         [TestMethod]
         public void CanGetTextToChars()
         {
-            using var cnn = CreateTestConnection();
+            using var cnn = CreateSqliteTestConnection();
             cnn.Open();
 
             using var cmd = cnn.CreateCommand();
@@ -250,6 +308,7 @@ namespace IKVM.Jdbc.Data.Tests
             cmd.ExecuteNonQuery();
             cmd.CommandText = "select * from CanGetTextToChars";
             using var rdr = cmd.ExecuteReader();
+            rdr.Read().Should().BeTrue();
             rdr.FieldCount.Should().Be(2);
             rdr.GetName(0).Should().Be("id");
             rdr.GetName(1).Should().Be("data");
@@ -265,7 +324,7 @@ namespace IKVM.Jdbc.Data.Tests
         [TestMethod]
         public void CanGetTextToReader()
         {
-            using var cnn = CreateTestConnection();
+            using var cnn = CreateSqliteTestConnection();
             cnn.Open();
 
             using var cmd = cnn.CreateCommand();
@@ -277,6 +336,7 @@ namespace IKVM.Jdbc.Data.Tests
             cmd.ExecuteNonQuery();
             cmd.CommandText = "select * from CanGetTextToReader";
             using var rdr = cmd.ExecuteReader();
+            rdr.Read().Should().BeTrue();
             rdr.FieldCount.Should().Be(2);
             rdr.GetName(0).Should().Be("id");
             rdr.GetName(1).Should().Be("data");
