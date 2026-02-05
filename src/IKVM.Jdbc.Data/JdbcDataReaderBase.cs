@@ -197,7 +197,7 @@ namespace IKVM.Jdbc.Data
                     Types.NCHAR => typeof(string),
                     Types.NCLOB => typeof(string),
                     Types.NULL => typeof(object),
-                    Types.NUMERIC => throw new NotImplementedException(),
+                    Types.NUMERIC => typeof(decimal),
                     Types.NVARCHAR => typeof(string),
                     Types.OTHER => throw new NotSupportedException(),
                     Types.REAL => typeof(float),
