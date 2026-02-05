@@ -488,6 +488,16 @@ namespace IKVM.Jdbc.Data
                     var value = GetNullableBoolean(ordinal);
                     return value is not null ? (T)(object)value : default;
                 }
+                else if (typeof(T) == typeof(sbyte))
+                {
+                    var value = GetSByte(ordinal);
+                    return (T)(object)value;
+                }
+                else if (typeof(T) == typeof(sbyte?))
+                {
+                    var value = GetNullableSByte(ordinal);
+                    return value is not null ? (T)(object)value : default;
+                }
                 else if (typeof(T) == typeof(byte))
                 {
                     var value = GetByte(ordinal);
@@ -820,6 +830,95 @@ namespace IKVM.Jdbc.Data
 
                     default:
                         throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into Boolean.");
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
+        }
+
+        /// <inheritdoc />
+        public sbyte GetSByte(int ordinal)
+        {
+            return GetNullableSByte(ordinal) ?? throw new JdbcNullValueException();
+        }
+
+        /// <inheritdoc />
+        sbyte? GetNullableSByte(int ordinal)
+        {
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= ResultSet.getMetaData().getColumnCount())
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
+            try
+            {
+                var column = ordinal + 1;
+                switch (ResultSet.getMetaData().getColumnType(column))
+                {
+                    case Types.BOOLEAN:
+                        var bool_ = ResultSet.getBoolean(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        return bool_ ? (sbyte)1 : (sbyte)0;
+
+                    case Types.BIT:
+                        var bit_ = ResultSet.getBoolean(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        return bit_ ? (sbyte)1 : (sbyte)0;
+
+                    case Types.TINYINT:
+                        var byte_ = ResultSet.getByte(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        return unchecked((sbyte)byte_);
+
+                    case Types.STRUCT:
+                        var struct_ = ResultSet.getObject(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        if (struct_ is long j)
+                            return checked((sbyte)j);
+                        if (struct_ is int i)
+                            return checked((sbyte)i);
+                        if (struct_ is short s)
+                            return checked((sbyte)s);
+                        if (struct_ is sbyte b)
+                            return checked((sbyte)b);
+
+                        if (struct_ is ulong uj)
+                            return checked((sbyte)uj);
+                        if (struct_ is uint ui)
+                            return checked((sbyte)ui);
+                        if (struct_ is ushort us)
+                            return checked((sbyte)us);
+                        if (struct_ is byte ub)
+                            return checked((sbyte)ub);
+
+                        if (struct_ is bool z)
+                            return z ? (sbyte)1 : (sbyte)0;
+
+                        if (struct_ is java.lang.Long jj)
+                            return checked((sbyte)jj.longValue());
+                        if (struct_ is java.lang.Integer ji)
+                            return checked((sbyte)ji.intValue());
+                        if (struct_ is java.lang.Short js)
+                            return checked((sbyte)js.shortValue());
+                        if (struct_ is java.lang.Byte jb)
+                            return checked((sbyte)jb.byteValue());
+                        if (struct_ is java.lang.Boolean jz)
+                            return jz.booleanValue() ? (sbyte)1 : (sbyte)0;
+
+                        throw new JdbcTypeException($"Could not coerce STRUCT type {struct_.GetType().FullName} into SByte.");
+
+                    default:
+                        throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into SByte.");
                 }
             }
             catch (SQLException e)
