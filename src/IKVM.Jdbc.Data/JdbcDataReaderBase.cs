@@ -654,10 +654,12 @@ namespace IKVM.Jdbc.Data
                 else
                 {
                     var value = GetValue(ordinal);
+                    if (value is null)
+                        return default;
                     if (value is T t)
                         return t;
-                    else
-                        throw new JdbcException($"Could not coerce underlying JDBC value to {typeof(T).FullName}.");
+
+                    throw new JdbcException($"Could not coerce underlying JDBC value to {typeof(T).FullName}.");
                 }
             }
             catch (SQLException e)
