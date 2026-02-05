@@ -215,7 +215,7 @@ namespace IKVM.Jdbc.Data
                     Types.TINYINT => typeof(byte),
                     Types.VARBINARY => typeof(byte[]),
                     Types.VARCHAR => typeof(string),
-                    _ => throw new NotSupportedException($"Column type '{columnType}' not supported."),
+                    _ => throw new NotSupportedException($"JDBC SQL type '{columnType}' not supported."),
                 };
             }
             catch (SQLException e)
