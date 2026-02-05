@@ -1411,6 +1411,72 @@ namespace IKVM.Jdbc.Data
         }
 
         /// <inheritdoc />
+        public DateTimeOffset GetDateTimeOffset(int ordinal)
+        {
+            return GetNullableDateTimeOffset(ordinal) ?? throw new JdbcNullValueException();
+        }
+
+        /// <inheritdoc />
+        DateTimeOffset? GetNullableDateTimeOffset(int ordinal)
+        {
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= ResultSet.getMetaData().getColumnCount())
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
+            try
+            {
+                var column = ordinal + 1;
+                switch (ResultSet.getMetaData().getColumnType(column))
+                {
+                    case Types.DATE:
+                        var date_ = ResultSet.getDate(column);
+                        return ResultSet.wasNull() ? null : DateTimeOffset.FromUnixTimeMilliseconds(date_.getTime());
+                    case Types.TIME:
+                        var time_ = ResultSet.getTime(column);
+                        return ResultSet.wasNull() ? null : DateTimeOffset.FromUnixTimeMilliseconds(time_.getTime());
+                    case Types.TIMESTAMP:
+                        var timestamp_ = ResultSet.getTimestamp(column);
+                        return ResultSet.wasNull() ? null : DateTimeOffset.FromUnixTimeMilliseconds(timestamp_.getTime());
+                    case Types.VARCHAR:
+                    case Types.NVARCHAR:
+                    case Types.LONGVARCHAR:
+                    case Types.LONGNVARCHAR:
+                        var string_ = ResultSet.getString(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        // parse as datetimeoffset, and then return dateonly value
+                        if (DateTimeOffset.TryParse(string_, null, DateTimeStyles.AssumeUniversal, out var d))
+                            return d.UtcDateTime;
+
+                        throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateTimeOffset.");
+
+                    case Types.TIME_WITH_TIMEZONE:
+                        var offsettime_ = (OffsetTime?)ResultSet.getObject(column, typeof(OffsetTime));
+                        if (ResultSet.wasNull() || offsettime_ is null)
+                            return null;
+
+                        return new DateTimeOffset(0, 0, 0, offsettime_.getHour(), offsettime_.getMinute(), offsettime_.getSecond(), offsettime_.getNano() / 1000000, TimeSpan.FromSeconds(offsettime_.getOffset().getTotalSeconds()));
+
+                    case Types.TIMESTAMP_WITH_TIMEZONE:
+                        var offsetdatetime_ = (OffsetDateTime?)ResultSet.getObject(column, typeof(OffsetDateTime));
+                        if (ResultSet.wasNull() || offsetdatetime_ is null)
+                            return null;
+
+                        return new DateTimeOffset(offsetdatetime_.getYear(), offsetdatetime_.getMonthValue(), offsetdatetime_.getDayOfMonth(), offsetdatetime_.getHour(), offsetdatetime_.getMinute(), offsetdatetime_.getSecond(), offsetdatetime_.getNano() / 1000000, TimeSpan.FromSeconds(offsetdatetime_.getOffset().getTotalSeconds()));
+
+                    default:
+                        throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateTimeOffset.");
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
+        }
+
+        /// <inheritdoc />
         public override DateTime GetDateTime(int ordinal)
         {
             return GetNullableDateTime(ordinal) ?? throw new JdbcNullValueException();

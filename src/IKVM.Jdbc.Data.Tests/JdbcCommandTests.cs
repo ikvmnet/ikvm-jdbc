@@ -117,6 +117,20 @@ namespace IKVM.Jdbc.Data.Tests
             rdr.GetFieldValue<DateTime>(0).Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
         }
 
+        [TestMethod]
+        public void CanGetDateAsDateTimeOffset()
+        {
+            using var cnn = CreateH2TestConnection();
+            cnn.Open();
+
+            using var cmd = cnn.CreateCommand();
+            cmd.CommandText = "SELECT CURRENT_TIMESTAMP";
+            using var rdr = cmd.ExecuteReader();
+            rdr.Read().Should().BeTrue();
+            rdr.FieldCount.Should().Be(1);
+            rdr.GetFieldValue<DateTimeOffset>(0).Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromMinutes(1));
+        }
+
 #if NET
 
         [TestMethod]
