@@ -540,7 +540,7 @@ namespace IKVM.Jdbc.Data
                 }
                 else if (typeof(T) == typeof(uint))
                 {
-                    var value = GetInt32(ordinal);
+                    var value = GetUInt32(ordinal);
                     return (T)(object)value;
                 }
                 else if (typeof(T) == typeof(uint?))
@@ -550,12 +550,12 @@ namespace IKVM.Jdbc.Data
                 }
                 else if (typeof(T) == typeof(long))
                 {
-                    var value = GetUInt64(ordinal);
+                    var value = GetInt64(ordinal);
                     return (T)(object)value;
                 }
                 else if (typeof(T) == typeof(long?))
                 {
-                    var value = GetNullableUInt64(ordinal);
+                    var value = GetNullableInt64(ordinal);
                     return value is not null ? (T)(object)value : default;
                 }
                 else if (typeof(T) == typeof(ulong))
