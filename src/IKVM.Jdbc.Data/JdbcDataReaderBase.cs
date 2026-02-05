@@ -1,18 +1,13 @@
 ﻿using System;
 using System.Buffers;
-using System.Buffers.Binary;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Data.SqlTypes;
 using System.Globalization;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Xml.Linq;
 
-using java.io;
-using java.lang;
-using java.nio;
 using java.sql;
 using java.time;
 
@@ -1081,7 +1076,7 @@ namespace IKVM.Jdbc.Data
 
                         return b.ToCharArray();
                     default:
-                        throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Byte[].");
+                        throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Char[].");
                 }
             }
             catch (SQLException e)
@@ -1716,6 +1711,45 @@ namespace IKVM.Jdbc.Data
                             return null;
 
                         return byte_;
+
+                    case Types.STRUCT:
+                        var struct_ = ResultSet.getObject(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        if (struct_ is long j)
+                            return checked((short)j);
+                        if (struct_ is int i)
+                            return checked((short)i);
+                        if (struct_ is short s)
+                            return checked((short)s);
+                        if (struct_ is sbyte b)
+                            return checked((short)b);
+
+                        if (struct_ is ulong uj)
+                            return checked((short)uj);
+                        if (struct_ is uint ui)
+                            return checked((short)ui);
+                        if (struct_ is ushort us)
+                            return checked((short)us);
+                        if (struct_ is byte ub)
+                            return checked((short)ub);
+
+                        if (struct_ is bool z)
+                            return z ? (short)1 : (short)0;
+
+                        if (struct_ is java.lang.Long jj)
+                            return checked((short)jj.longValue());
+                        if (struct_ is java.lang.Integer ji)
+                            return checked((short)ji.intValue());
+                        if (struct_ is java.lang.Short js)
+                            return checked((short)js.shortValue());
+                        if (struct_ is java.lang.Byte jb)
+                            return checked((short)jb.byteValue());
+                        if (struct_ is java.lang.Boolean jz)
+                            return jz.booleanValue() ? (short)1 : (short)0;
+
+                        throw new SqlTypeException($"Could not coerce STRUCT type {struct_.GetType().FullName} into Int16.");
                     default:
                         throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Int16.");
                 }
@@ -1771,6 +1805,45 @@ namespace IKVM.Jdbc.Data
                             return null;
 
                         return checked((ushort?)byte_);
+
+                    case Types.STRUCT:
+                        var struct_ = ResultSet.getObject(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        if (struct_ is long j)
+                            return checked((ushort)j);
+                        if (struct_ is int i)
+                            return checked((ushort)i);
+                        if (struct_ is short s)
+                            return checked((ushort)s);
+                        if (struct_ is sbyte b)
+                            return checked((ushort)b);
+
+                        if (struct_ is ulong uj)
+                            return checked((ushort)uj);
+                        if (struct_ is uint ui)
+                            return checked((ushort)ui);
+                        if (struct_ is ushort us)
+                            return checked((ushort)us);
+                        if (struct_ is byte ub)
+                            return checked((ushort)ub);
+
+                        if (struct_ is bool z)
+                            return z ? (ushort)1 : (ushort)0;
+
+                        if (struct_ is java.lang.Long jj)
+                            return checked((ushort)jj.longValue());
+                        if (struct_ is java.lang.Integer ji)
+                            return checked((ushort)ji.intValue());
+                        if (struct_ is java.lang.Short js)
+                            return checked((ushort)js.shortValue());
+                        if (struct_ is java.lang.Byte jb)
+                            return checked((ushort)jb.byteValue());
+                        if (struct_ is java.lang.Boolean jz)
+                            return jz.booleanValue() ? (ushort)1 : (ushort)0;
+
+                        throw new SqlTypeException($"Could not coerce STRUCT type {struct_.GetType().FullName} into UInt16.");
                     default:
                         throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into UInt16.");
                 }
@@ -1828,6 +1901,44 @@ namespace IKVM.Jdbc.Data
 
                         return byte_;
 
+                    case Types.STRUCT:
+                        var struct_ = ResultSet.getObject(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        if (struct_ is long j)
+                            return checked((int)j);
+                        if (struct_ is int i)
+                            return checked((int)i);
+                        if (struct_ is short s)
+                            return checked((int)s);
+                        if (struct_ is sbyte b)
+                            return checked((int)b);
+
+                        if (struct_ is ulong uj)
+                            return checked((int)uj);
+                        if (struct_ is uint ui)
+                            return checked((int)ui);
+                        if (struct_ is ushort us)
+                            return checked((int)us);
+                        if (struct_ is byte ub)
+                            return checked((int)ub);
+
+                        if (struct_ is bool z)
+                            return z ? (int)1 : (int)0;
+
+                        if (struct_ is java.lang.Long jj)
+                            return checked((int)jj.longValue());
+                        if (struct_ is java.lang.Integer ji)
+                            return checked((int)ji.intValue());
+                        if (struct_ is java.lang.Short js)
+                            return checked((int)js.shortValue());
+                        if (struct_ is java.lang.Byte jb)
+                            return checked((int)jb.byteValue());
+                        if (struct_ is java.lang.Boolean jz)
+                            return jz.booleanValue() ? (int)1 : (int)0;
+
+                        throw new SqlTypeException($"Could not coerce STRUCT type {struct_.GetType().FullName} into Int32.");
                     default:
                         throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Int32.");
                 }
@@ -1882,6 +1993,45 @@ namespace IKVM.Jdbc.Data
                             return null;
 
                         return checked((uint?)byte_);
+
+                    case Types.STRUCT:
+                        var struct_ = ResultSet.getObject(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        if (struct_ is long j)
+                            return checked((uint)j);
+                        if (struct_ is int i)
+                            return checked((uint)i);
+                        if (struct_ is short s)
+                            return checked((uint)s);
+                        if (struct_ is sbyte b)
+                            return checked((uint)b);
+
+                        if (struct_ is ulong uj)
+                            return checked((uint)uj);
+                        if (struct_ is uint ui)
+                            return checked((uint)ui);
+                        if (struct_ is ushort us)
+                            return checked((uint)us);
+                        if (struct_ is byte ub)
+                            return checked((uint)ub);
+
+                        if (struct_ is bool z)
+                            return z ? (uint)1 : (uint)0;
+
+                        if (struct_ is java.lang.Long jj)
+                            return checked((uint)jj.longValue());
+                        if (struct_ is java.lang.Integer ji)
+                            return checked((uint)ji.intValue());
+                        if (struct_ is java.lang.Short js)
+                            return checked((uint)js.shortValue());
+                        if (struct_ is java.lang.Byte jb)
+                            return checked((uint)jb.byteValue());
+                        if (struct_ is java.lang.Boolean jz)
+                            return jz.booleanValue() ? (uint)1 : (uint)0;
+
+                        throw new SqlTypeException($"Could not coerce STRUCT type {struct_.GetType().FullName} into UInt32.");
                     default:
                         throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into UInt32.");
                 }
@@ -1935,6 +2085,45 @@ namespace IKVM.Jdbc.Data
                             return null;
 
                         return byte_;
+
+                    case Types.STRUCT:
+                        var struct_ = ResultSet.getObject(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        if (struct_ is long j)
+                            return checked((long)j);
+                        if (struct_ is int i)
+                            return checked((long)i);
+                        if (struct_ is short s)
+                            return checked((long)s);
+                        if (struct_ is sbyte b)
+                            return checked((long)b);
+
+                        if (struct_ is ulong uj)
+                            return checked((long)uj);
+                        if (struct_ is uint ui)
+                            return checked((long)ui);
+                        if (struct_ is ushort us)
+                            return checked((long)us);
+                        if (struct_ is byte ub)
+                            return checked((long)ub);
+
+                        if (struct_ is bool z)
+                            return z ? (long)1 : (long)0;
+
+                        if (struct_ is java.lang.Long jj)
+                            return checked((long)jj.longValue());
+                        if (struct_ is java.lang.Integer ji)
+                            return checked((long)ji.intValue());
+                        if (struct_ is java.lang.Short js)
+                            return checked((long)js.shortValue());
+                        if (struct_ is java.lang.Byte jb)
+                            return checked((long)jb.byteValue());
+                        if (struct_ is java.lang.Boolean jz)
+                            return jz.booleanValue() ? (long)1 : (long)0;
+
+                        throw new SqlTypeException($"Could not coerce STRUCT type {struct_.GetType().FullName} into Int64.");
                     default:
                         throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into Int64.");
                 }
@@ -1988,6 +2177,45 @@ namespace IKVM.Jdbc.Data
                             return null;
 
                         return checked((ulong?)byte_);
+
+                    case Types.STRUCT:
+                        var struct_ = ResultSet.getObject(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        if (struct_ is long j)
+                            return checked((ulong)j);
+                        if (struct_ is int i)
+                            return checked((ulong)i);
+                        if (struct_ is short s)
+                            return checked((ulong)s);
+                        if (struct_ is sbyte b)
+                            return checked((ulong)b);
+
+                        if (struct_ is ulong uj)
+                            return checked((ulong)uj);
+                        if (struct_ is uint ui)
+                            return checked((ulong)ui);
+                        if (struct_ is ushort us)
+                            return checked((ulong)us);
+                        if (struct_ is byte ub)
+                            return checked((ulong)ub);
+
+                        if (struct_ is bool z)
+                            return z ? (ulong)1 : (ulong)0;
+
+                        if (struct_ is java.lang.Long jj)
+                            return checked((ulong)jj.longValue());
+                        if (struct_ is java.lang.Integer ji)
+                            return checked((ulong)ji.intValue());
+                        if (struct_ is java.lang.Short js)
+                            return checked((ulong)js.shortValue());
+                        if (struct_ is java.lang.Byte jb)
+                            return checked((ulong)jb.byteValue());
+                        if (struct_ is java.lang.Boolean jz)
+                            return jz.booleanValue() ? (ulong)1 : (ulong)0;
+
+                        throw new SqlTypeException($"Could not coerce STRUCT type {struct_.GetType().FullName} into UInt64.");
                     default:
                         throw new SqlTypeException($"Could not convert column type {ResultSet.getMetaData().getColumnTypeName(column)} into UInt64.");
                 }
