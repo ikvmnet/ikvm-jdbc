@@ -400,7 +400,7 @@ namespace IKVM.Jdbc.Data
                     case Types.NVARCHAR:
                     case Types.LONGVARCHAR:
                     case Types.LONGNVARCHAR:
-                        return IsDBNull(ordinal) ? DBNull.Value : GetString(ordinal);
+                        return (object?)GetNullableString(ordinal) ?? DBNull.Value;
                     case Types.BLOB:
                     case Types.BINARY:
                     case Types.VARBINARY:
@@ -1519,6 +1519,9 @@ namespace IKVM.Jdbc.Data
 
                         return new DateTimeOffset(offsetdatetime_.getYear(), offsetdatetime_.getMonthValue(), offsetdatetime_.getDayOfMonth(), offsetdatetime_.getHour(), offsetdatetime_.getMinute(), offsetdatetime_.getSecond(), offsetdatetime_.getNano() / 1000000, TimeSpan.FromSeconds(offsetdatetime_.getOffset().getTotalSeconds()));
 
+                    case Types.TIMESTAMP_WITH_TIMEZONE:
+                        throw new JdbcUnsupportedTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateTimeOffset with JDBC < 4.2 connection.", JdbcVersion);
+
                     default:
                         throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateTimeOffset.");
                 }
@@ -1596,6 +1599,9 @@ namespace IKVM.Jdbc.Data
                             return null;
 
                         return new DateTimeOffset(offsetdatetime_.getYear(), offsetdatetime_.getMonthValue(), offsetdatetime_.getDayOfMonth(), offsetdatetime_.getHour(), offsetdatetime_.getMinute(), offsetdatetime_.getSecond(), offsetdatetime_.getNano() / 1000000, TimeSpan.FromSeconds(offsetdatetime_.getOffset().getTotalSeconds())).UtcDateTime;
+
+                    case Types.TIMESTAMP_WITH_TIMEZONE:
+                        throw new JdbcUnsupportedTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateTime with JDBC < 4.2 connection.", JdbcVersion);
 
                     default:
                         throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateTime.");
@@ -2723,6 +2729,17 @@ namespace IKVM.Jdbc.Data
             if (ordinal >= ResultSet.getMetaData().getColumnCount())
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
 
+            return GetNullableString(ordinal) ?? throw new JdbcNullValueException();
+        }
+
+        /// <inheritdoc />
+        string? GetNullableString(int ordinal)
+        {
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= ResultSet.getMetaData().getColumnCount())
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
             try
             {
                 var column = ordinal + 1;
@@ -2738,7 +2755,7 @@ namespace IKVM.Jdbc.Data
                     case Types.NCLOB:
                         var string_ = ResultSet.getString(column);
                         if (ResultSet.wasNull())
-                            throw new JdbcNullValueException();
+                            return null;
 
                         return string_;
 

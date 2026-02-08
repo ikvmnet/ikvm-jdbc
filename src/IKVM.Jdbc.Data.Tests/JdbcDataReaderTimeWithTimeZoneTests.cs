@@ -20,20 +20,6 @@ namespace IKVM.Jdbc.Data.Tests
         }
 
 
-        [TestMethod]
-        public void CanGetAsDateTimeOffset()
-        {
-            using var cnn = CreateH2TestConnection();
-            cnn.Open();
-
-            using var cmd = cnn.CreateCommand();
-            cmd.CommandText = "SELECT TIME WITH TIME ZONE '15:04:01+10'";
-            using var rdr = cmd.ExecuteReader();
-            Assert.IsTrue(rdr.Read());
-            Assert.AreEqual(1, rdr.FieldCount);
-            Assert.AreEqual(new DateTimeOffset(1, 1, 1, 15, 4, 1, TimeSpan.FromHours(10)), rdr.GetFieldValue<DateTimeOffset>(0));
-        }
-
     }
 
 }

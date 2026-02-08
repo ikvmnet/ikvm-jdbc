@@ -21,7 +21,7 @@
     <ItemGroup>
         <MavenReference Include="org.xerial:sqlite-jdbc" Version="3.49.1.0" />
         <MavenReference Include="com.h2database:h2" Version="1.4.200" />
-        <MavenReference Include="org.postgresql:postgresql" Version="42.7.5" />
+        <MavenReference Include="org.hsqldb:hsqldb" Version="2.7.4" Classifier="jdk8" />
     </ItemGroup>
 
 </Project>

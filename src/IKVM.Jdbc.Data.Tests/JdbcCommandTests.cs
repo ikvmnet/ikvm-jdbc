@@ -17,7 +17,6 @@ namespace IKVM.Jdbc.Data.Tests
         {
             ikvm.runtime.Startup.addBootClassPathAssembly(typeof(org.h2.Driver).Assembly);
             ikvm.runtime.Startup.addBootClassPathAssembly(typeof(org.sqlite.JDBC).Assembly);
-            ikvm.runtime.Startup.addBootClassPathAssembly(typeof(org.postgresql.jdbc.PgConnection).Assembly);
         }
 
         JdbcConnection CreateSqliteTestConnection()
