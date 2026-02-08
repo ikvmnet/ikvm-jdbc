@@ -15,20 +15,13 @@ namespace IKVM.Jdbc.Data.Tests
 
         static JdbcCommandTests()
         {
-            ikvm.runtime.Startup.addBootClassPathAssembly(typeof(org.h2.Driver).Assembly);
-            GC.KeepAlive(org.h2.Driver.load());
-
             ikvm.runtime.Startup.addBootClassPathAssembly(typeof(org.sqlite.JDBC).Assembly);
+            org.sqlite.SQLiteJDBCLoader.initialize();
         }
 
         JdbcConnection CreateSqliteTestConnection()
         {
             return new JdbcConnection("jdbc:sqlite:sample.db");
-        }
-
-        JdbcConnection CreateH2TestConnection()
-        {
-            return new JdbcConnection("jdbc:h2:mem:sample");
         }
 
         [TestMethod]
@@ -89,23 +82,6 @@ namespace IKVM.Jdbc.Data.Tests
             rdr.GetName(0).Should().Be("id");
             rdr.GetFieldValue<int?>(0).Should().BeNull();
         }
-
-        //[TestMethod]
-        //public void CanReturnGeneratedKeys()
-        //{
-        //    using var cnn = new JdbcConnection(DriverManager.getConnection("jdbc:postgresql:test", "postgres", "10241024"));
-        //    cnn.Open();
-
-        //    using var cmd = cnn.CreateCommand();
-        //    cmd.CommandType = System.Data.CommandType.Text;
-        //    cmd.CommandText = "INSERT INTO test (name) VALUES (?) -- :GetGeneratedKeys";
-        //    cmd.Parameters.AddWithValue("1", "BOB");
-        //    using var rdr = cmd.ExecuteReader();
-        //    while (rdr.Read())
-        //    {
-        //        Console.WriteLine(rdr[0]);
-        //    }
-        //}
 
     }
 

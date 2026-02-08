@@ -15,7 +15,8 @@ namespace IKVM.Jdbc.Data.Tests
 
         static JdbcConnectionTests()
         {
-            GC.KeepAlive(typeof(org.sqlite.SQLiteConnection));
+            ikvm.runtime.Startup.addBootClassPathAssembly(typeof(org.sqlite.JDBC).Assembly);
+            org.sqlite.SQLiteJDBCLoader.initialize();
         }
 
         JdbcConnection CreateTestConnection()
