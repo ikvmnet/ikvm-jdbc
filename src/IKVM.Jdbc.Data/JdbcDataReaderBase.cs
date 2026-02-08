@@ -9,6 +9,7 @@ using System.Xml.Linq;
 
 using java.sql;
 using java.time;
+using java.util;
 
 namespace IKVM.Jdbc.Data
 {
@@ -18,6 +19,8 @@ namespace IKVM.Jdbc.Data
     /// </summary>
     public abstract class JdbcDataReaderBase : DbDataReader
     {
+
+        static readonly Version JDBC_4_2 = new Version(4, 2);
 
         const int DEFAULT_BUFFER_SIZE = 1024;
 
@@ -46,6 +49,11 @@ namespace IKVM.Jdbc.Data
             if (AdvanceNextResultSet() == false)
                 throw new InvalidOperationException("No active result set.");
         }
+
+        /// <summary>
+        /// Gets the JDBC version.
+        /// </summary>
+        Version JdbcVersion => _command.Connection?.JdbcVersion ?? throw new InvalidOperationException();
 
         /// <summary>
         /// Advances the iter to the next result set.
@@ -164,17 +172,21 @@ namespace IKVM.Jdbc.Data
             {
                 var column = ordinal + 1;
 
-                try
+                // 4.2 allows getObject to return certain known types
+                if (JdbcVersion >= JDBC_4_2)
                 {
-                    var obj_ = ResultSet.getObject(column);
+                    try
+                    {
+                        var obj_ = ResultSet.getObject(column);
 
-                    // preempt with specific UUID type
-                    if (obj_ is java.util.UUID uuid_)
-                        return typeof(Guid);
-                }
-                catch (SQLException)
-                {
-                    // ignore, we tried
+                        // preempt with specific UUID type
+                        if (obj_ is java.util.UUID uuid_)
+                            return typeof(Guid);
+                    }
+                    catch (SQLException)
+                    {
+                        // ignore, we tried
+                    }
                 }
 
                 var columnType = ResultSet.getMetaData().getColumnType(column);
@@ -1451,26 +1463,56 @@ namespace IKVM.Jdbc.Data
                 var column = ordinal + 1;
                 switch (ResultSet.getMetaData().getColumnType(column))
                 {
+                    case Types.DATE when JdbcVersion >= JDBC_4_2:
+                        var localdate_ = (LocalDate?)ResultSet.getObject(column, typeof(LocalDate));
+                        if (ResultSet.wasNull() || localdate_ is null)
+                            return null;
+
+                        return new DateTimeOffset(localdate_.getYear(), localdate_.getMonthValue(), localdate_.getDayOfMonth(), 0, 0, 0, TimeSpan.FromHours(0));
+
                     case Types.DATE:
                         var date_ = ResultSet.getDate(column);
-                        return ResultSet.wasNull() ? null : new DateTimeOffset(date_.getYear() + 1900, date_.getMonth() + 1, date_.getDate(), 0, 0, 0, TimeSpan.FromHours(0));
+                        if (ResultSet.wasNull() || date_ is null)
+                            return null;
+
+                        return new DateTimeOffset(date_.getYear() + 1900, date_.getMonth() + 1, date_.getDate(), 0, 0, 0, TimeSpan.FromHours(0));
+
+                    case Types.TIME when JdbcVersion >= JDBC_4_2:
+                        var localtime_ = (LocalTime?)ResultSet.getObject(column, typeof(LocalTime));
+                        if (ResultSet.wasNull() || localtime_ is null)
+                            return null;
+
+                        return new DateTimeOffset(1, 1, 1, localtime_.getHour(), localtime_.getMinute(), localtime_.getSecond(), localtime_.getNano() / 1000000, TimeSpan.FromHours(0));
 
                     case Types.TIME:
                         var time_ = ResultSet.getTime(column);
-                        return ResultSet.wasNull() ? null : new DateTimeOffset(1, 1, 1, time_.getHours(), time_.getMinutes(), time_.getSeconds(), TimeSpan.FromHours(0));
+                        if (ResultSet.wasNull() || time_ is null)
+                            return null;
+
+                        return new DateTimeOffset(1, 1, 1, time_.getHours(), time_.getMinutes(), time_.getSeconds(), TimeSpan.FromHours(0));
+
+                    case Types.TIMESTAMP when JdbcVersion >= JDBC_4_2:
+                        var localdatetime_ = (LocalDateTime?)ResultSet.getObject(column, typeof(LocalDateTime));
+                        if (ResultSet.wasNull() || localdatetime_ is null)
+                            return null;
+
+                        return new DateTimeOffset(localdatetime_.getYear(), localdatetime_.getMonthValue(), localdatetime_.getDayOfMonth(), localdatetime_.getHour(), localdatetime_.getMinute(), localdatetime_.getSecond(), TimeSpan.FromHours(0));
 
                     case Types.TIMESTAMP:
                         var timestamp_ = ResultSet.getTimestamp(column);
-                        return ResultSet.wasNull() ? null : new DateTimeOffset(timestamp_.getYear() + 1900, timestamp_.getMonth() + 1, timestamp_.getDate(), timestamp_.getHours(), timestamp_.getMinutes(), timestamp_.getSeconds(), TimeSpan.FromHours(0));
+                        if (ResultSet.wasNull() || timestamp_ is null)
+                            return null;
 
-                    case Types.TIME_WITH_TIMEZONE:
+                        return new DateTimeOffset(timestamp_.getYear() + 1900, timestamp_.getMonth() + 1, timestamp_.getDate(), timestamp_.getHours(), timestamp_.getMinutes(), timestamp_.getSeconds(), TimeSpan.FromHours(0));
+
+                    case Types.TIME_WITH_TIMEZONE when JdbcVersion >= JDBC_4_2:
                         var offsettime_ = (OffsetTime?)ResultSet.getObject(column, typeof(OffsetTime));
                         if (ResultSet.wasNull() || offsettime_ is null)
                             return null;
 
                         return new DateTimeOffset(1, 1, 1, offsettime_.getHour(), offsettime_.getMinute(), offsettime_.getSecond(), offsettime_.getNano() / 1000000, TimeSpan.FromSeconds(offsettime_.getOffset().getTotalSeconds()));
 
-                    case Types.TIMESTAMP_WITH_TIMEZONE:
+                    case Types.TIMESTAMP_WITH_TIMEZONE when JdbcVersion >= JDBC_4_2:
                         var offsetdatetime_ = (OffsetDateTime?)ResultSet.getObject(column, typeof(OffsetDateTime));
                         if (ResultSet.wasNull() || offsetdatetime_ is null)
                             return null;
@@ -1506,19 +1548,49 @@ namespace IKVM.Jdbc.Data
                 var column = ordinal + 1;
                 switch (ResultSet.getMetaData().getColumnType(column))
                 {
+                    case Types.DATE when JdbcVersion >= JDBC_4_2:
+                        var localdate_ = (LocalDate?)ResultSet.getObject(column, typeof(LocalDate));
+                        if (ResultSet.wasNull() || localdate_ is null)
+                            return null;
+
+                        return new DateTime(localdate_.getYear(), localdate_.getMonthValue(), localdate_.getDayOfMonth(), 0, 0, 0);
+
                     case Types.DATE:
                         var date_ = ResultSet.getDate(column);
-                        return ResultSet.wasNull() ? null : new DateTime(date_.getYear() + 1900, date_.getMonth() + 1, date_.getDate(), 0, 0, 0, DateTimeKind.Unspecified);
+                        if (ResultSet.wasNull() || date_ is null)
+                            return null;
+
+                        return new DateTime(date_.getYear() + 1900, date_.getMonth() + 1, date_.getDate(), 0, 0, 0);
+
+                    case Types.TIME when JdbcVersion >= JDBC_4_2:
+                        var localtime_ = (LocalTime?)ResultSet.getObject(column, typeof(LocalTime));
+                        if (ResultSet.wasNull() || localtime_ is null)
+                            return null;
+
+                        return new DateTime(1, 1, 1, localtime_.getHour(), localtime_.getMinute(), localtime_.getSecond(), localtime_.getNano() / 1000000);
 
                     case Types.TIME:
                         var time_ = ResultSet.getTime(column);
-                        return ResultSet.wasNull() ? null : new DateTime(1, 1, 1, time_.getHours(), time_.getMinutes(), time_.getSeconds(), DateTimeKind.Unspecified);
+                        if (ResultSet.wasNull() || time_ is null)
+                            return null;
+
+                        return new DateTime(1, 1, 1, time_.getHours(), time_.getMinutes(), time_.getSeconds());
+
+                    case Types.TIMESTAMP when JdbcVersion >= JDBC_4_2:
+                        var localdatetime_ = (LocalDateTime?)ResultSet.getObject(column, typeof(LocalDateTime));
+                        if (ResultSet.wasNull() || localdatetime_ is null)
+                            return null;
+
+                        return new DateTime(localdatetime_.getYear(), localdatetime_.getMonthValue(), localdatetime_.getDayOfMonth(), localdatetime_.getHour(), localdatetime_.getMinute(), localdatetime_.getSecond());
 
                     case Types.TIMESTAMP:
                         var timestamp_ = ResultSet.getTimestamp(column);
-                        return ResultSet.wasNull() ? null : new DateTime(timestamp_.getYear() + 1900, timestamp_.getMonth() + 1, timestamp_.getDate(), timestamp_.getHours(), timestamp_.getMinutes(), timestamp_.getSeconds(), DateTimeKind.Unspecified);
+                        if (ResultSet.wasNull() || timestamp_ is null)
+                            return null;
 
-                    case Types.TIMESTAMP_WITH_TIMEZONE:
+                        return new DateTime(timestamp_.getYear() + 1900, timestamp_.getMonth() + 1, timestamp_.getDate(), timestamp_.getHours(), timestamp_.getMinutes(), timestamp_.getSeconds());
+
+                    case Types.TIMESTAMP_WITH_TIMEZONE when JdbcVersion >= JDBC_4_2:
                         var offsetdatetime_ = (OffsetDateTime?)ResultSet.getObject(column, typeof(OffsetDateTime));
                         if (ResultSet.wasNull() || offsetdatetime_ is null)
                             return null;
@@ -1554,12 +1626,42 @@ namespace IKVM.Jdbc.Data
                 var column = ordinal + 1;
                 switch (ResultSet.getMetaData().getColumnType(column))
                 {
+                    case Types.TIME when JdbcVersion >= JDBC_4_2:
+                        var localtime_ = (LocalTime?)ResultSet.getObject(column, typeof(LocalTime));
+                        if (ResultSet.wasNull() || localtime_ is null)
+                            return null;
+
+                        return new TimeSpan(0, localtime_.getHour(), localtime_.getMinute(), localtime_.getSecond(), localtime_.getNano() / 1000000);
+
                     case Types.TIME:
                         var time_ = ResultSet.getTime(column);
+                        if (ResultSet.wasNull() || time_ is null)
+                            return null;
+
+                        return new TimeSpan(0, time_.getHours(), time_.getMinutes(), time_.getSeconds());
+
+                    case Types.TIMESTAMP when JdbcVersion >= JDBC_4_2:
+                        var localdatetime_ = (LocalDateTime?)ResultSet.getObject(column, typeof(LocalDateTime));
+                        if (ResultSet.wasNull() || localdatetime_ is null)
+                            return null;
+
+#if NET8_0_OR_GREATER
+                        return new TimeSpan(0, localdatetime_.getHour(), localdatetime_.getMinute(), localdatetime_.getSecond(), 0, localdatetime_.getNano() / 1000);
+#else
+                        return new TimeSpan(0,localdatetime_.getHour(), localdatetime_.getMinute(), localdatetime_.getSecond(), localdatetime_.getNano() / 1000000);
+#endif
+
+                    case Types.TIMESTAMP:
+                        var timestamp_ = ResultSet.getTimestamp(column);
                         if (ResultSet.wasNull())
                             return null;
 
-                        return new TimeSpan(time_.getHours(), time_.getMinutes(), time_.getSeconds());
+#if NET8_0_OR_GREATER
+                        return new TimeSpan(0, timestamp_.getHours(), timestamp_.getMinutes(), timestamp_.getSeconds(), 0, timestamp_.getNanos() / 1000);
+#else
+                        return new TimeSpan(0, timestamp_.getHours(), timestamp_.getMinutes(),timestamp_.getSeconds(), timestamp_.getNanos() / 1000000);
+#endif
+
                     default:
                         throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into TimeSpan.");
                 }
@@ -1591,13 +1693,42 @@ namespace IKVM.Jdbc.Data
                 var column = ordinal + 1;
                 switch (ResultSet.getMetaData().getColumnType(column))
                 {
+                    case Types.DATE when JdbcVersion >= JDBC_4_2:
+                        var localdate_ = (LocalDate?)ResultSet.getObject(column, typeof(LocalDate));
+                        if (ResultSet.wasNull() || localdate_ is null)
+                            return null;
+
+                        return new DateOnly(localdate_.getYear(), localdate_.getMonthValue(), localdate_.getDayOfMonth());
+
                     case Types.DATE:
-                        var date_ = ResultSet.getDate(column);
-                        return ResultSet.wasNull() ? null : new DateOnly(date_.getYear() + 1900, date_.getMonth() + 1, date_.getDate());
+                        {
+                            var date_ = ResultSet.getDate(column);
+                            if (ResultSet.wasNull() || date_ is null)
+                                return null;
+
+                            return new DateOnly(date_.getYear() + 1900, date_.getMonth() + 1, date_.getDate());
+                        }
+
+                    case Types.TIMESTAMP when JdbcVersion >= JDBC_4_2:
+                        var localdatetime_ = (LocalDateTime?)ResultSet.getObject(column, typeof(LocalDateTime));
+                        if (ResultSet.wasNull() || localdatetime_ is null)
+                            return null;
+
+                        return new DateOnly(localdatetime_.getYear(), localdatetime_.getMonthValue(), localdatetime_.getDayOfMonth());
 
                     case Types.TIMESTAMP:
                         var timestamp_ = ResultSet.getTimestamp(column);
-                        return ResultSet.wasNull() ? null : new DateOnly(timestamp_.getYear() + 1900, timestamp_.getMonth() + 1, timestamp_.getDate());
+                        if (ResultSet.wasNull() || timestamp_ is null)
+                            return null;
+
+                        return new DateOnly(timestamp_.getYear() + 1900, timestamp_.getMonth() + 1, timestamp_.getDate());
+
+                    case Types.TIMESTAMP_WITH_TIMEZONE when JdbcVersion >= JDBC_4_2:
+                        var offsetdatetime_ = (OffsetDateTime?)ResultSet.getObject(column, typeof(OffsetDateTime));
+                        if (ResultSet.wasNull() || offsetdatetime_ is null)
+                            return null;
+
+                        return DateOnly.FromDateTime(new DateTimeOffset(offsetdatetime_.getYear(), offsetdatetime_.getMonthValue(), offsetdatetime_.getDayOfMonth(), offsetdatetime_.getHour(), offsetdatetime_.getMinute(), offsetdatetime_.getSecond(), offsetdatetime_.getNano() / 1000000, TimeSpan.FromSeconds(offsetdatetime_.getOffset().getTotalSeconds())).UtcDateTime);
 
                     default:
                         throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateOnly.");
@@ -1628,17 +1759,35 @@ namespace IKVM.Jdbc.Data
                 var column = ordinal + 1;
                 switch (ResultSet.getMetaData().getColumnType(column))
                 {
+                    case Types.TIME when JdbcVersion >= JDBC_4_2:
+                        var localtime_ = (LocalTime?)ResultSet.getObject(column, typeof(LocalTime));
+                        if (ResultSet.wasNull() || localtime_ is null)
+                            return null;
+
+                        return new TimeOnly(localtime_.getHour(), localtime_.getMinute(), localtime_.getSecond(), localtime_.getNano() / 1000000);
+
                     case Types.TIME:
                         var time_ = ResultSet.getTime(column);
-                        if (ResultSet.wasNull())
-                            throw new JdbcNullValueException();
+                        if (ResultSet.wasNull() || time_ is null)
+                            return null;
 
                         return new TimeOnly(time_.getHours(), time_.getMinutes(), time_.getSeconds());
+
+                    case Types.TIMESTAMP when JdbcVersion >= JDBC_4_2:
+                        var localdatetime_ = (LocalDateTime?)ResultSet.getObject(column, typeof(LocalDateTime));
+                        if (ResultSet.wasNull() || localdatetime_ is null)
+                            return null;
+
+#if NET8_0_OR_GREATER
+                        return new TimeOnly(localdatetime_.getHour(), localdatetime_.getMinute(), localdatetime_.getSecond(), 0, localdatetime_.getNano() / 1000);
+#else
+                        return new TimeOnly(localdatetime_.getHour(), localdatetime_.getMinute(), localdatetime_.getSecond(), localdatetime_.getNano() / 1000000);
+#endif
 
                     case Types.TIMESTAMP:
                         var timestamp_ = ResultSet.getTimestamp(column);
                         if (ResultSet.wasNull())
-                            throw new JdbcNullValueException();
+                            return null;
 
 #if NET8_0_OR_GREATER
                         return new TimeOnly(timestamp_.getHours(), timestamp_.getMinutes(), timestamp_.getSeconds(), 0, timestamp_.getNanos() / 1000);
@@ -1934,18 +2083,6 @@ namespace IKVM.Jdbc.Data
 
                 try
                 {
-                    var obj_ = ResultSet.getObject(column);
-                    if (ResultSet.wasNull())
-                        return null;
-
-                    // we try to examine the object directly first, since some drivers support directly returning UUID
-                    if (obj_ is java.util.UUID uuid_)
-                    {
-                        var java = (Span<byte>)stackalloc byte[16];
-                        BinaryPrimitives.WriteInt64BigEndian(java, uuid_.getMostSignificantBits());
-                        BinaryPrimitives.WriteInt64BigEndian(java.Slice(8), uuid_.getLeastSignificantBits());
-                        return JavaUuidBytesToGuid(java);
-                    }
                 }
                 catch (SQLException)
                 {
@@ -1957,6 +2094,22 @@ namespace IKVM.Jdbc.Data
                     case Types.BINARY:
                     case Types.VARBINARY:
                     case Types.BLOB:
+
+                        if (JdbcVersion >= JDBC_4_2)
+                        {
+                            var obj_ = ResultSet.getObject(column, typeof(UUID));
+                            if (ResultSet.wasNull())
+                                return null;
+
+                            if (obj_ is UUID uuid_)
+                            {
+                                var java = (Span<byte>)stackalloc byte[16];
+                                BinaryPrimitives.WriteInt64BigEndian(java, uuid_.getMostSignificantBits());
+                                BinaryPrimitives.WriteInt64BigEndian(java.Slice(8), uuid_.getLeastSignificantBits());
+                                return JavaUuidBytesToGuid(java);
+                            }
+                        }
+
                         var bytes_ = ResultSet.getBytes(column);
                         if (ResultSet.wasNull() || bytes_ is null)
                             return null;
@@ -1979,17 +2132,6 @@ namespace IKVM.Jdbc.Data
                         return guid_;
 
                     default:
-                        var obj_ = ResultSet.getObject(column);
-                        if (ResultSet.wasNull())
-                            return null;
-
-                        // if unhandled SQL type, fall back to examing object
-                        switch (obj_)
-                        {
-                            case byte[] buff_:
-                                return JavaUuidBytesToGuid(buff_);
-                        }
-
                         throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into Guid.");
                 }
             }

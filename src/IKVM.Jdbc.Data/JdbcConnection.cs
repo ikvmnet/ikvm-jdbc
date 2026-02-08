@@ -21,6 +21,8 @@ namespace IKVM.Jdbc.Data
         readonly bool _leaveOpen;
         internal JdbcTransaction? _transaction;
 
+        Version? _jdbcVersion;
+
         /// <summary>
         /// Initializes a new instance.
         /// </summary>
@@ -84,6 +86,25 @@ namespace IKVM.Jdbc.Data
         /// Gets or sets the connection properties.
         /// </summary>
         public IReadOnlyDictionary<string, string>? Properties => _properties;
+
+        /// <summary>
+        /// Gets the JDBC version.
+        /// </summary>
+        public Version JdbcVersion => _jdbcVersion ??= GetJdbcVersion();
+
+        /// <summary>
+        /// Gets the JDBC version.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        Version GetJdbcVersion()
+        {
+            if (_connection is null)
+                throw new InvalidOperationException();
+
+            var md = _connection.getMetaData();
+            return new Version(md.getJDBCMajorVersion(), md.getJDBCMinorVersion());
+        }
 
         /// <summary>
         /// Gets or sets the connection string.

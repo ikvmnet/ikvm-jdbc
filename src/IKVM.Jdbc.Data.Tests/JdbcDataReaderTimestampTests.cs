@@ -47,6 +47,20 @@ namespace IKVM.Jdbc.Data.Tests
             Assert.AreEqual(new DateTimeOffset(2005, 12, 31, 23, 59, 59, TimeSpan.Zero), rdr.GetFieldValue<DateTimeOffset>(0));
         }
 
+        [TestMethod]
+        public void CanGetAsTimeSpan()
+        {
+            using var cnn = CreateH2TestConnection();
+            cnn.Open();
+
+            using var cmd = cnn.CreateCommand();
+            cmd.CommandText = "SELECT TIMESTAMP '1970-01-01 12:32:01'";
+            using var rdr = cmd.ExecuteReader();
+            Assert.IsTrue(rdr.Read());
+            Assert.AreEqual(1, rdr.FieldCount);
+            Assert.AreEqual(new TimeSpan(12, 32, 1), rdr.GetFieldValue<TimeSpan>(0));
+        }
+
 #if NET
 
         [TestMethod]
@@ -61,6 +75,20 @@ namespace IKVM.Jdbc.Data.Tests
             Assert.IsTrue(rdr.Read());
             Assert.AreEqual(1, rdr.FieldCount);
             Assert.AreEqual(new DateOnly(2005, 12, 31), rdr.GetFieldValue<DateOnly>(0));
+        }
+
+        [TestMethod]
+        public void CanGetAsTimeOnly()
+        {
+            using var cnn = CreateH2TestConnection();
+            cnn.Open();
+
+            using var cmd = cnn.CreateCommand();
+            cmd.CommandText = "SELECT TIMESTAMP '1970-01-01 12:32:01'";
+            using var rdr = cmd.ExecuteReader();
+            Assert.IsTrue(rdr.Read());
+            Assert.AreEqual(1, rdr.FieldCount);
+            Assert.AreEqual(new TimeOnly(12, 32, 1), rdr.GetFieldValue<TimeOnly>(0));
         }
 
 #endif
