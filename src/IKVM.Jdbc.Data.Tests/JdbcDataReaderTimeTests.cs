@@ -1,0 +1,84 @@
+﻿using System;
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+namespace IKVM.Jdbc.Data.Tests
+{
+
+    [TestClass]
+    public class JdbcDataReaderTimeTests
+    {
+
+        static JdbcDataReaderTimeTests()
+        {
+            ikvm.runtime.Startup.addBootClassPathAssembly(typeof(org.h2.Driver).Assembly);
+        }
+
+        JdbcConnection CreateH2TestConnection()
+        {
+            return new JdbcConnection("jdbc:h2:mem:sample");
+        }
+
+        [TestMethod]
+        public void CanGetAsDateTime()
+        {
+            using var cnn = CreateH2TestConnection();
+            cnn.Open();
+
+            using var cmd = cnn.CreateCommand();
+            cmd.CommandText = "SELECT TIME '15:04:01'";
+            using var rdr = cmd.ExecuteReader();
+            Assert.IsTrue(rdr.Read());
+            Assert.AreEqual(1, rdr.FieldCount);
+            Assert.AreEqual(new DateTime(1, 1, 1, 15, 4, 1), rdr.GetFieldValue<DateTime>(0));
+        }
+
+        [TestMethod]
+        public void CanGetAsDateTimeOffset()
+        {
+            using var cnn = CreateH2TestConnection();
+            cnn.Open();
+
+            using var cmd = cnn.CreateCommand();
+            cmd.CommandText = "SELECT TIME '15:04:01'";
+            using var rdr = cmd.ExecuteReader();
+            Assert.IsTrue(rdr.Read());
+            Assert.AreEqual(1, rdr.FieldCount);
+            Assert.AreEqual(new DateTimeOffset(1, 1, 1, 15, 4, 1, TimeSpan.Zero), rdr.GetFieldValue<DateTimeOffset>(0));
+        }
+
+        [TestMethod]
+        public void CanGetAsTimeSpan()
+        {
+            using var cnn = CreateH2TestConnection();
+            cnn.Open();
+
+            using var cmd = cnn.CreateCommand();
+            cmd.CommandText = "SELECT TIME '15:04:01'";
+            using var rdr = cmd.ExecuteReader();
+            Assert.IsTrue(rdr.Read());
+            Assert.AreEqual(1, rdr.FieldCount);
+            Assert.AreEqual(new TimeSpan(15, 4, 1), rdr.GetFieldValue<TimeSpan>(0));
+        }
+
+#if NET
+
+        [TestMethod]
+        public void CanGetAsTimeOnly()
+        {
+            using var cnn = CreateH2TestConnection();
+            cnn.Open();
+
+            using var cmd = cnn.CreateCommand();
+            cmd.CommandText = "SELECT TIME '15:04:01'";
+            using var rdr = cmd.ExecuteReader();
+            Assert.IsTrue(rdr.Read());
+            Assert.AreEqual(1, rdr.FieldCount);
+            Assert.AreEqual(new TimeOnly(15, 4, 1), rdr.GetFieldValue<TimeOnly>(0));
+        }
+
+#endif
+
+    }
+
+}

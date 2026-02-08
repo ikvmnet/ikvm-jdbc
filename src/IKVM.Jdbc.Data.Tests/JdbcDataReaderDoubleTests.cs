@@ -1,0 +1,78 @@
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+namespace IKVM.Jdbc.Data.Tests
+{
+
+    [TestClass]
+    public class JdbcDataReaderDoubleTests
+    {
+
+        static JdbcDataReaderDoubleTests()
+        {
+            ikvm.runtime.Startup.addBootClassPathAssembly(typeof(org.h2.Driver).Assembly);
+        }
+
+        JdbcConnection CreateH2TestConnection()
+        {
+            return new JdbcConnection("jdbc:h2:mem:sample");
+        }
+
+        [TestMethod]
+        public void CanGetDouble()
+        {
+            using var cnn = CreateH2TestConnection();
+            cnn.Open();
+
+            using var cmd = cnn.CreateCommand();
+            cmd.CommandText = "SELECT CAST(1024.01 AS DOUBLE PRECISION)";
+            using var rdr = cmd.ExecuteReader();
+            Assert.IsTrue(rdr.Read());
+            Assert.AreEqual(1, rdr.FieldCount);
+            Assert.AreEqual(1024.01d, rdr.GetDouble(0));
+        }
+
+        [TestMethod]
+        public void CanGetAsDouble()
+        {
+            using var cnn = CreateH2TestConnection();
+            cnn.Open();
+
+            using var cmd = cnn.CreateCommand();
+            cmd.CommandText = "SELECT CAST(1024.01 AS DOUBLE PRECISION)";
+            using var rdr = cmd.ExecuteReader();
+            Assert.IsTrue(rdr.Read());
+            Assert.AreEqual(1, rdr.FieldCount);
+            Assert.AreEqual(1024.01d, rdr.GetFieldValue<double>(0));
+        }
+
+        [TestMethod]
+        public void CanGetFloat()
+        {
+            using var cnn = CreateH2TestConnection();
+            cnn.Open();
+
+            using var cmd = cnn.CreateCommand();
+            cmd.CommandText = "SELECT CAST(1024.01 AS DOUBLE PRECISION)";
+            using var rdr = cmd.ExecuteReader();
+            Assert.IsTrue(rdr.Read());
+            Assert.AreEqual(1, rdr.FieldCount);
+            Assert.AreEqual(1024.01f, rdr.GetFloat(0));
+        }
+
+        [TestMethod]
+        public void CanGetAsFloat()
+        {
+            using var cnn = CreateH2TestConnection();
+            cnn.Open();
+
+            using var cmd = cnn.CreateCommand();
+            cmd.CommandText = "SELECT CAST(1024.01 AS DOUBLE PRECISION)";
+            using var rdr = cmd.ExecuteReader();
+            Assert.IsTrue(rdr.Read());
+            Assert.AreEqual(1, rdr.FieldCount);
+            Assert.AreEqual(1024.01f, rdr.GetFieldValue<float>(0));
+        }
+
+    }
+
+}

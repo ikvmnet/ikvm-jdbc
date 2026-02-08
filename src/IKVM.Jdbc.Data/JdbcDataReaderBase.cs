@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Buffers;
+using System.Buffers.Binary;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Globalization;
 using System.IO;
 using System.Xml.Linq;
 
@@ -163,6 +163,20 @@ namespace IKVM.Jdbc.Data
             try
             {
                 var column = ordinal + 1;
+
+                try
+                {
+                    var obj_ = ResultSet.getObject(column);
+
+                    // preempt with specific UUID type
+                    if (obj_ is java.util.UUID uuid_)
+                        return typeof(Guid);
+                }
+                catch (SQLException)
+                {
+                    // ignore, we tried
+                }
+
                 var columnType = ResultSet.getMetaData().getColumnType(column);
                 return columnType switch
                 {
@@ -174,14 +188,14 @@ namespace IKVM.Jdbc.Data
                     Types.BOOLEAN => typeof(bool),
                     Types.CHAR => typeof(string),
                     Types.CLOB => typeof(string),
-                    Types.DATALINK => throw new NotImplementedException("DATALINK type not supported."),
+                    Types.DATALINK => throw new NotImplementedException("DATALINK type not implemented."),
 #if NETFRAMEWORK
                     Types.DATE => typeof(DateTime),
 #else
                     Types.DATE => typeof(DateOnly),
 #endif
                     Types.DECIMAL => typeof(decimal),
-                    Types.DISTINCT => throw new NotImplementedException("DISTINCT type not supported."),
+                    Types.DISTINCT => throw new NotImplementedException("DISTINCT type not implemented."),
                     Types.DOUBLE => typeof(double),
                     Types.FLOAT => typeof(float),
                     Types.INTEGER => typeof(int),
@@ -194,22 +208,26 @@ namespace IKVM.Jdbc.Data
                     Types.NULL => typeof(object),
                     Types.NUMERIC => typeof(decimal),
                     Types.NVARCHAR => typeof(string),
-                    Types.OTHER => throw new NotImplementedException("OTHER type not supported."),
+                    Types.OTHER => throw new NotImplementedException("OTHER type not implemented."),
                     Types.REAL => typeof(float),
-                    Types.REF => throw new NotImplementedException("REF type not supported."),
-                    Types.REF_CURSOR => throw new NotImplementedException("REF_CURSOR type not supported."),
-                    Types.ROWID => throw new NotImplementedException("ROWID type not supported."),
+                    Types.REF => throw new NotImplementedException("REF type not implemented."),
+                    Types.REF_CURSOR => throw new NotImplementedException("REF_CURSOR type not implemented."),
+                    Types.ROWID => throw new NotImplementedException("ROWID type not implemented."),
                     Types.SMALLINT => typeof(short),
                     Types.SQLXML => typeof(XDocument),
                     Types.STRUCT => typeof(object),
+#if NETFRAMEWORK
                     Types.TIME => typeof(TimeSpan),
+#else
+                    Types.TIME => typeof(TimeOnly),
+#endif
                     Types.TIMESTAMP => typeof(DateTime),
                     Types.TIMESTAMP_WITH_TIMEZONE => typeof(DateTimeOffset),
                     Types.TIME_WITH_TIMEZONE => typeof(DateTimeOffset),
                     Types.TINYINT => typeof(byte),
                     Types.VARBINARY => typeof(byte[]),
                     Types.VARCHAR => typeof(string),
-                    _ => throw new NotImplementedException($"JDBC SQL type '{columnType}' not supported."),
+                    _ => throw new NotImplementedException($"JDBC SQL type '{columnType}' not implemented."),
                 };
             }
             catch (SQLException e)
@@ -345,119 +363,86 @@ namespace IKVM.Jdbc.Data
             try
             {
                 var column = ordinal + 1;
-                switch (ResultSet.getMetaData().getColumnType(column))
+
+                try
                 {
-                    case Types.ARRAY:
-                        var array_ = ResultSet.getArray(column);
-                        return ResultSet.wasNull() ? DBNull.Value : array_.getArray();
-                    case Types.BIGINT:
-                        var long_ = ResultSet.getLong(column);
-                        return ResultSet.wasNull() ? DBNull.Value : long_;
-                    case Types.BINARY:
-                        var binary_ = ResultSet.getBytes(column);
-                        return ResultSet.wasNull() ? DBNull.Value : binary_;
-                    case Types.BIT:
-                        var bit_ = ResultSet.getBoolean(column);
-                        return ResultSet.wasNull() ? DBNull.Value : bit_;
-                    case Types.BLOB:
-                        var blob_ = ResultSet.getBytes(column);
-                        return ResultSet.wasNull() ? DBNull.Value : blob_;
-                    case Types.BOOLEAN:
-                        var bool_ = ResultSet.getBoolean(column);
-                        return ResultSet.wasNull() ? DBNull.Value : bool_;
+                    var obj_ = ResultSet.getObject(column);
+
+                    // preempt with specific UUID type
+                    if (obj_ is java.util.UUID uuid_)
+                        return GetGuid(ordinal);
+                }
+                catch (SQLException)
+                {
+                    // ignore, we tried
+                }
+
+                var columnType = ResultSet.getMetaData().getColumnType(column);
+                switch (columnType)
+                {
                     case Types.CHAR:
-                        var char_ = ResultSet.getString(column);
-                        return ResultSet.wasNull() ? DBNull.Value : char_;
-                    case Types.CLOB:
-                        var clob_ = ResultSet.getString(column);
-                        return ResultSet.wasNull() ? DBNull.Value : clob_;
-                    case Types.DATALINK:
-                        throw new NotImplementedException("DATALINK type not supported.");
-                    case Types.DATE:
-                        var date_ = ResultSet.getDate(column);
-                        return ResultSet.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(date_.getTime()).DateTime;
-                    case Types.DECIMAL:
-                        var decimal_ = ResultSet.getBigDecimal(column);
-                        return ResultSet.wasNull() ? DBNull.Value : JdbcTypeConversion.ToDecimal(decimal_);
-                    case Types.DISTINCT:
-                        throw new NotImplementedException("DISTINCT type not supported.");
-                    case Types.DOUBLE:
-                        var double_ = ResultSet.getDouble(column);
-                        return ResultSet.wasNull() ? DBNull.Value : double_;
-                    case Types.FLOAT:
-                        var float_ = ResultSet.getFloat(column);
-                        return ResultSet.wasNull() ? DBNull.Value : float_;
-                    case Types.INTEGER:
-                        var integer_ = ResultSet.getInt(column);
-                        return ResultSet.wasNull() ? DBNull.Value : integer_;
-                    case Types.JAVA_OBJECT:
-                        var object_ = ResultSet.getObject(column);
-                        return ResultSet.wasNull() ? DBNull.Value : object_;
-                    case Types.LONGNVARCHAR:
-                        var longnvarchar_ = ResultSet.getString(column);
-                        return ResultSet.wasNull() ? DBNull.Value : longnvarchar_;
-                    case Types.LONGVARBINARY:
-                        var longvarbinary_ = ResultSet.getBytes(column);
-                        return ResultSet.wasNull() ? DBNull.Value : longvarbinary_;
-                    case Types.LONGVARCHAR:
-                        var longvarchar_ = ResultSet.getString(column);
-                        return ResultSet.wasNull() ? DBNull.Value : longvarchar_;
                     case Types.NCHAR:
-                        var nchar_ = ResultSet.getString(column);
-                        return ResultSet.wasNull() ? DBNull.Value : nchar_;
+                    case Types.CLOB:
                     case Types.NCLOB:
-                        var nclob_ = ResultSet.getString(column);
-                        return ResultSet.wasNull() ? DBNull.Value : nclob_;
+                    case Types.VARCHAR:
+                    case Types.NVARCHAR:
+                    case Types.LONGVARCHAR:
+                    case Types.LONGNVARCHAR:
+                        return IsDBNull(ordinal) ? DBNull.Value : GetString(ordinal);
+                    case Types.BLOB:
+                    case Types.BINARY:
+                    case Types.VARBINARY:
+                    case Types.LONGVARBINARY:
+                        return (object?)GetNullableBytes(ordinal) ?? DBNull.Value;
+                    case Types.BIT:
+                        return (object?)GetNullableBoolean(ordinal) ?? DBNull.Value;
+                    case Types.BOOLEAN:
+                        return (object?)GetNullableBoolean(ordinal) ?? DBNull.Value;
+                    case Types.BIGINT:
+                        return (object?)GetNullableInt64(ordinal) ?? DBNull.Value;
+                    case Types.SMALLINT:
+                        return (object?)GetNullableInt16(ordinal) ?? DBNull.Value;
+                    case Types.INTEGER:
+                        return (object?)GetNullableInt32(ordinal) ?? DBNull.Value;
+                    case Types.FLOAT:
+                    case Types.REAL:
+                        return (object?)GetNullableFloat(ordinal) ?? DBNull.Value;
+                    case Types.DOUBLE:
+                        return (object?)GetNullableDouble(ordinal) ?? DBNull.Value;
+                    case Types.DECIMAL:
+                        return (object?)GetNullableDecimal(ordinal) ?? DBNull.Value;
+                    case Types.DATE:
+                        return (object?)GetNullableDateTime(ordinal) ?? DBNull.Value;
+                    case Types.TIME:
+                        return (object?)GetNullableTimeSpan(ordinal) ?? DBNull.Value;
+                    case Types.TIME_WITH_TIMEZONE:
+                        return (object?)GetNullableDateTimeOffset(ordinal) ?? DBNull.Value;
+                    case Types.TIMESTAMP:
+                        return (object?)GetNullableDateTime(ordinal) ?? DBNull.Value;
+                    case Types.TIMESTAMP_WITH_TIMEZONE:
+                        return (object?)GetNullableDateTimeOffset(ordinal) ?? DBNull.Value;
+                    case Types.TINYINT:
+                        return (object?)GetNullableByte(ordinal) ?? DBNull.Value;
                     case Types.NULL:
                         return DBNull.Value;
-                    case Types.NUMERIC:
-                        throw new NotImplementedException("NUMERIC type not supported.");
-                    case Types.NVARCHAR:
-                        var nvarchar_ = ResultSet.getString(column);
-                        return ResultSet.wasNull() ? DBNull.Value : nvarchar_;
-                    case Types.OTHER:
-                        throw new NotImplementedException("OTHER type not supported.");
-                    case Types.REAL:
-                        var real_ = ResultSet.getFloat(column);
-                        return ResultSet.wasNull() ? DBNull.Value : real_;
-                    case Types.REF:
-                        throw new NotImplementedException("REF type not supported.");
-                    case Types.REF_CURSOR:
-                        throw new NotImplementedException("REF_CURSOR type not supported.");
-                    case Types.ROWID:
-                        throw new NotImplementedException("ROWID type not supported.");
-                    case Types.SMALLINT:
-                        var smallint_ = ResultSet.getShort(column);
-                        return ResultSet.wasNull() ? DBNull.Value : smallint_;
                     case Types.SQLXML:
                         var sqlxml_ = ResultSet.getSQLXML(column);
                         return ResultSet.wasNull() ? DBNull.Value : XDocument.Parse(sqlxml_.getString());
                     case Types.STRUCT:
-                        var struct_ = ResultSet.getObject(column);
-                        return ResultSet.wasNull() ? DBNull.Value : struct_;
-                    case Types.TIME:
-                        var time_ = ResultSet.getTime(column);
-                        return ResultSet.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(time_.getTime()).TimeOfDay;
-                    case Types.TIMESTAMP:
-                        var timestamp_ = ResultSet.getTimestamp(column);
-                        return ResultSet.wasNull() ? DBNull.Value : DateTimeOffset.FromUnixTimeMilliseconds(timestamp_.getTime()).DateTime;
-                    case Types.TIME_WITH_TIMEZONE:
-                        var offsettime_ = (OffsetTime?)ResultSet.getObject(column, typeof(OffsetTime));
-                        return ResultSet.wasNull() || offsettime_ is null ? DBNull.Value : new DateTimeOffset(0, 0, 0, offsettime_.getHour(), offsettime_.getMinute(), offsettime_.getSecond(), offsettime_.getNano() / 1000000, TimeSpan.FromSeconds(offsettime_.getOffset().getTotalSeconds())).TimeOfDay;
-                    case Types.TIMESTAMP_WITH_TIMEZONE:
-                        var offsetdatetime_ = (OffsetDateTime?)ResultSet.getObject(column, typeof(OffsetDateTime));
-                        return ResultSet.wasNull() || offsetdatetime_ is null ? DBNull.Value : new DateTimeOffset(offsetdatetime_.getYear(), offsetdatetime_.getMonthValue(), offsetdatetime_.getDayOfMonth(), offsetdatetime_.getHour(), offsetdatetime_.getMinute(), offsetdatetime_.getSecond(), offsetdatetime_.getNano() / 1000000, TimeSpan.FromSeconds(offsetdatetime_.getOffset().getTotalSeconds()));
-                    case Types.TINYINT:
-                        var tinyint_ = ResultSet.getByte(column);
-                        return ResultSet.wasNull() ? DBNull.Value : tinyint_;
-                    case Types.VARBINARY:
-                        var varbinary_ = ResultSet.getBytes(column);
-                        return ResultSet.wasNull() ? DBNull.Value : varbinary_;
-                    case Types.VARCHAR:
-                        var varchar_ = ResultSet.getString(column);
-                        return ResultSet.wasNull() ? DBNull.Value : varchar_;
+                    case Types.JAVA_OBJECT:
+                        return GetObject(column) ?? DBNull.Value;
+                    case Types.ARRAY:
+                        var array_ = ResultSet.getArray(column);
+                        return ResultSet.wasNull() ? DBNull.Value : array_.getArray();
+                    case Types.DATALINK:
+                    case Types.DISTINCT:
+                    case Types.NUMERIC:
+                    case Types.OTHER:
+                    case Types.REF:
+                    case Types.REF_CURSOR:
+                    case Types.ROWID:
                     default:
-                        throw new NotImplementedException("Type not supported.");
+                        throw new NotImplementedException($"{Enum.GetName(typeof(Types), columnType)} type not implemented.");
                 }
             }
             catch (SQLException e)
@@ -663,6 +648,16 @@ namespace IKVM.Jdbc.Data
                 else if (typeof(T) == typeof(char[]))
                 {
                     var value = GetChars(ordinal);
+                    return value is not null ? (T)(object)value : default;
+                }
+                else if (typeof(T) == typeof(Guid))
+                {
+                    var value = GetGuid(ordinal);
+                    return (T)(object)value;
+                }
+                else if (typeof(T) == typeof(Guid?))
+                {
+                    var value = GetNullableGuid(ordinal);
                     return value is not null ? (T)(object)value : default;
                 }
                 else
@@ -1032,7 +1027,23 @@ namespace IKVM.Jdbc.Data
         /// <param name="ordinal"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
-        public byte[]? GetBytes(int ordinal)
+        public byte[] GetBytes(int ordinal)
+        {
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= ResultSet.getMetaData().getColumnCount())
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
+            return GetNullableBytes(ordinal) ?? throw new JdbcNullValueException();
+        }
+
+        /// <summary>
+        /// Gets the value of the specified column ordinal as a byte array.
+        /// </summary>
+        /// <param name="ordinal"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        byte[]? GetNullableBytes(int ordinal)
         {
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
@@ -1050,9 +1061,10 @@ namespace IKVM.Jdbc.Data
                     case Types.BLOB:
                         var b = ResultSet.getBytes(column);
                         if (ResultSet.wasNull())
-                            throw new JdbcNullValueException();
+                            return null;
 
                         return b;
+
                     default:
                         throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into Byte[].");
                 }
@@ -1441,33 +1453,22 @@ namespace IKVM.Jdbc.Data
                 {
                     case Types.DATE:
                         var date_ = ResultSet.getDate(column);
-                        return ResultSet.wasNull() ? null : DateTimeOffset.FromUnixTimeMilliseconds(date_.getTime());
+                        return ResultSet.wasNull() ? null : new DateTimeOffset(date_.getYear() + 1900, date_.getMonth() + 1, date_.getDate(), 0, 0, 0, TimeSpan.FromHours(0));
+
                     case Types.TIME:
                         var time_ = ResultSet.getTime(column);
-                        return ResultSet.wasNull() ? null : DateTimeOffset.FromUnixTimeMilliseconds(time_.getTime());
+                        return ResultSet.wasNull() ? null : new DateTimeOffset(1, 1, 1, time_.getHours(), time_.getMinutes(), time_.getSeconds(), TimeSpan.FromHours(0));
+
                     case Types.TIMESTAMP:
                         var timestamp_ = ResultSet.getTimestamp(column);
-                        return ResultSet.wasNull() ? null : DateTimeOffset.FromUnixTimeMilliseconds(timestamp_.getTime());
-                    case Types.VARCHAR:
-                    case Types.NVARCHAR:
-                    case Types.LONGVARCHAR:
-                    case Types.LONGNVARCHAR:
-                        var string_ = ResultSet.getString(column);
-                        if (ResultSet.wasNull())
-                            return null;
-
-                        // parse as datetimeoffset, and then return dateonly value
-                        if (DateTimeOffset.TryParse(string_, null, DateTimeStyles.AssumeUniversal, out var d))
-                            return d.UtcDateTime;
-
-                        throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateTimeOffset.");
+                        return ResultSet.wasNull() ? null : new DateTimeOffset(timestamp_.getYear() + 1900, timestamp_.getMonth() + 1, timestamp_.getDate(), timestamp_.getHours(), timestamp_.getMinutes(), timestamp_.getSeconds(), TimeSpan.FromHours(0));
 
                     case Types.TIME_WITH_TIMEZONE:
                         var offsettime_ = (OffsetTime?)ResultSet.getObject(column, typeof(OffsetTime));
                         if (ResultSet.wasNull() || offsettime_ is null)
                             return null;
 
-                        return new DateTimeOffset(0, 0, 0, offsettime_.getHour(), offsettime_.getMinute(), offsettime_.getSecond(), offsettime_.getNano() / 1000000, TimeSpan.FromSeconds(offsettime_.getOffset().getTotalSeconds()));
+                        return new DateTimeOffset(1, 1, 1, offsettime_.getHour(), offsettime_.getMinute(), offsettime_.getSecond(), offsettime_.getNano() / 1000000, TimeSpan.FromSeconds(offsettime_.getOffset().getTotalSeconds()));
 
                     case Types.TIMESTAMP_WITH_TIMEZONE:
                         var offsetdatetime_ = (OffsetDateTime?)ResultSet.getObject(column, typeof(OffsetDateTime));
@@ -1507,33 +1508,15 @@ namespace IKVM.Jdbc.Data
                 {
                     case Types.DATE:
                         var date_ = ResultSet.getDate(column);
-                        return ResultSet.wasNull() ? null : DateTimeOffset.FromUnixTimeMilliseconds(date_.getTime()).UtcDateTime;
+                        return ResultSet.wasNull() ? null : new DateTime(date_.getYear() + 1900, date_.getMonth() + 1, date_.getDate(), 0, 0, 0, DateTimeKind.Unspecified);
+
                     case Types.TIME:
                         var time_ = ResultSet.getTime(column);
-                        return ResultSet.wasNull() ? null : DateTimeOffset.FromUnixTimeMilliseconds(time_.getTime()).UtcDateTime;
+                        return ResultSet.wasNull() ? null : new DateTime(1, 1, 1, time_.getHours(), time_.getMinutes(), time_.getSeconds(), DateTimeKind.Unspecified);
+
                     case Types.TIMESTAMP:
                         var timestamp_ = ResultSet.getTimestamp(column);
-                        return ResultSet.wasNull() ? null : DateTimeOffset.FromUnixTimeMilliseconds(timestamp_.getTime()).UtcDateTime;
-                    case Types.VARCHAR:
-                    case Types.NVARCHAR:
-                    case Types.LONGVARCHAR:
-                    case Types.LONGNVARCHAR:
-                        var string_ = ResultSet.getString(column);
-                        if (ResultSet.wasNull())
-                            return null;
-
-                        // parse as datetimeoffset, and then return dateonly value
-                        if (DateTimeOffset.TryParse(string_, null, DateTimeStyles.AssumeUniversal, out var d))
-                            return d.UtcDateTime;
-
-                        throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateTime.");
-
-                    case Types.TIME_WITH_TIMEZONE:
-                        var offsettime_ = (OffsetTime?)ResultSet.getObject(column, typeof(OffsetTime));
-                        if (ResultSet.wasNull() || offsettime_ is null)
-                            return null;
-
-                        return new DateTimeOffset(0, 0, 0, offsettime_.getHour(), offsettime_.getMinute(), offsettime_.getSecond(), offsettime_.getNano() / 1000000, TimeSpan.FromSeconds(offsettime_.getOffset().getTotalSeconds())).UtcDateTime;
+                        return ResultSet.wasNull() ? null : new DateTime(timestamp_.getYear() + 1900, timestamp_.getMonth() + 1, timestamp_.getDate(), timestamp_.getHours(), timestamp_.getMinutes(), timestamp_.getSeconds(), DateTimeKind.Unspecified);
 
                     case Types.TIMESTAMP_WITH_TIMEZONE:
                         var offsetdatetime_ = (OffsetDateTime?)ResultSet.getObject(column, typeof(OffsetDateTime));
@@ -1572,11 +1555,11 @@ namespace IKVM.Jdbc.Data
                 switch (ResultSet.getMetaData().getColumnType(column))
                 {
                     case Types.TIME:
-                        var date_ = ResultSet.getDate(column);
+                        var time_ = ResultSet.getTime(column);
                         if (ResultSet.wasNull())
                             return null;
 
-                        return TimeSpan.FromMilliseconds(date_.getTime());
+                        return new TimeSpan(time_.getHours(), time_.getMinutes(), time_.getSeconds());
                     default:
                         throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into TimeSpan.");
                 }
@@ -1610,36 +1593,12 @@ namespace IKVM.Jdbc.Data
                 {
                     case Types.DATE:
                         var date_ = ResultSet.getDate(column);
-                        if (ResultSet.wasNull())
-                            return null;
+                        return ResultSet.wasNull() ? null : new DateOnly(date_.getYear() + 1900, date_.getMonth() + 1, date_.getDate());
 
-                        return DateOnly.FromDateTime(DateTimeOffset.FromUnixTimeMilliseconds(date_.getTime()).UtcDateTime);
                     case Types.TIMESTAMP:
                         var timestamp_ = ResultSet.getTimestamp(column);
-                        if (ResultSet.wasNull())
-                            return null;
+                        return ResultSet.wasNull() ? null : new DateOnly(timestamp_.getYear() + 1900, timestamp_.getMonth() + 1, timestamp_.getDate());
 
-                        return DateOnly.FromDateTime(DateTimeOffset.FromUnixTimeMilliseconds(timestamp_.getTime()).UtcDateTime);
-                    case Types.VARCHAR:
-                    case Types.NVARCHAR:
-                    case Types.LONGVARCHAR:
-                    case Types.LONGNVARCHAR:
-                        var string_ = ResultSet.getString(column);
-                        if (ResultSet.wasNull())
-                            return null;
-
-                        // parse as datetimeoffset, and then return dateonly value
-                        if (DateTimeOffset.TryParse(string_, null, DateTimeStyles.AssumeLocal, out var d))
-                            return DateOnly.FromDateTime(d.UtcDateTime);
-
-                        throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateOnly.");
-
-                    case Types.TIMESTAMP_WITH_TIMEZONE:
-                        var offsetdatetime_ = (OffsetDateTime?)ResultSet.getObject(column, typeof(OffsetDateTime));
-                        if (ResultSet.wasNull() || offsetdatetime_ is null)
-                            return null;
-
-                        return new DateOnly(offsetdatetime_.getYear(), offsetdatetime_.getMonthValue(), offsetdatetime_.getDayOfMonth());
                     default:
                         throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into DateOnly.");
                 }
@@ -1670,17 +1629,23 @@ namespace IKVM.Jdbc.Data
                 switch (ResultSet.getMetaData().getColumnType(column))
                 {
                     case Types.TIME:
-                        var date_ = ResultSet.getDate(column);
+                        var time_ = ResultSet.getTime(column);
                         if (ResultSet.wasNull())
                             throw new JdbcNullValueException();
 
-                        return TimeOnly.FromDateTime(DateTimeOffset.FromUnixTimeMilliseconds(date_.getTime()).DateTime);
+                        return new TimeOnly(time_.getHours(), time_.getMinutes(), time_.getSeconds());
+
                     case Types.TIMESTAMP:
                         var timestamp_ = ResultSet.getTimestamp(column);
                         if (ResultSet.wasNull())
                             throw new JdbcNullValueException();
 
-                        return TimeOnly.FromDateTime(DateTimeOffset.FromUnixTimeMilliseconds(timestamp_.getTime()).DateTime);
+#if NET8_0_OR_GREATER
+                        return new TimeOnly(timestamp_.getHours(), timestamp_.getMinutes(), timestamp_.getSeconds(), 0, timestamp_.getNanos() / 1000);
+#else
+                        return new TimeOnly(timestamp_.getHours(), timestamp_.getMinutes(), timestamp_.getSeconds(), timestamp_.getNanos() / 1000000);
+#endif
+
                     default:
                         throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into TimeOnly.");
                 }
@@ -1806,12 +1771,13 @@ namespace IKVM.Jdbc.Data
 
                         return double_;
 
+                    case Types.REAL:
                     case Types.FLOAT:
                         var float_ = ResultSet.getFloat(column);
                         if (ResultSet.wasNull())
                             return null;
 
-                        return float_;
+                        return checked((double)float_);
 
                     case Types.INTEGER:
                         var int_ = ResultSet.getInt(column);
@@ -1878,6 +1844,7 @@ namespace IKVM.Jdbc.Data
 
                         return checked((float)double_);
 
+                    case Types.REAL:
                     case Types.FLOAT:
                         var float_ = ResultSet.getFloat(column);
                         if (ResultSet.wasNull())
@@ -1924,7 +1891,112 @@ namespace IKVM.Jdbc.Data
             if (ordinal >= ResultSet.getMetaData().getColumnCount())
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
 
-            return Guid.Parse((string)GetValue(ordinal));
+            return GetNullableGuid(ordinal) ?? throw new JdbcNullValueException();
+        }
+
+        /// <summary>
+        /// Converts a Java UUID layout pattern to a .NET GUID layout pattern.
+        /// </summary>
+        /// <param name="uuid"></param>
+        /// <returns></returns>
+        static Guid JavaUuidBytesToGuid(ReadOnlySpan<byte> uuid)
+        {
+            var guid = (Span<byte>)stackalloc byte[16];
+            for (int i = 8; i < 16; i++)
+                guid[i] = uuid[i];
+
+            guid[3] = uuid[0];
+            guid[2] = uuid[1];
+            guid[1] = uuid[2];
+            guid[0] = uuid[3];
+            guid[5] = uuid[4];
+            guid[4] = uuid[5];
+            guid[6] = uuid[7];
+            guid[7] = uuid[6];
+
+#if NET
+            return new Guid(guid);
+#else
+            return new Guid(guid.ToArray());
+#endif
+        }
+
+        Guid? GetNullableGuid(int ordinal)
+        {
+            if (ordinal < 0)
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+            if (ordinal >= ResultSet.getMetaData().getColumnCount())
+                throw new ArgumentOutOfRangeException(nameof(ordinal));
+
+            try
+            {
+                var column = ordinal + 1;
+
+                try
+                {
+                    var obj_ = ResultSet.getObject(column);
+                    if (ResultSet.wasNull())
+                        return null;
+
+                    // we try to examine the object directly first, since some drivers support directly returning UUID
+                    if (obj_ is java.util.UUID uuid_)
+                    {
+                        var java = (Span<byte>)stackalloc byte[16];
+                        BinaryPrimitives.WriteInt64BigEndian(java, uuid_.getMostSignificantBits());
+                        BinaryPrimitives.WriteInt64BigEndian(java.Slice(8), uuid_.getLeastSignificantBits());
+                        return JavaUuidBytesToGuid(java);
+                    }
+                }
+                catch (SQLException)
+                {
+                    // ignore, we tried
+                }
+
+                switch (ResultSet.getMetaData().getColumnType(column))
+                {
+                    case Types.BINARY:
+                    case Types.VARBINARY:
+                    case Types.BLOB:
+                        var bytes_ = ResultSet.getBytes(column);
+                        if (ResultSet.wasNull() || bytes_ is null)
+                            return null;
+
+                        return JavaUuidBytesToGuid(bytes_);
+
+                    case Types.CHAR:
+                    case Types.NCHAR:
+                    case Types.VARCHAR:
+                    case Types.NVARCHAR:
+                    case Types.CLOB:
+                    case Types.NCLOB:
+                        var string_ = ResultSet.getString(column);
+                        if (ResultSet.wasNull() || string_ is null)
+                            return null;
+
+                        if (Guid.TryParse(string_, out var guid_) == false)
+                            throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into Guid.");
+
+                        return guid_;
+
+                    default:
+                        var obj_ = ResultSet.getObject(column);
+                        if (ResultSet.wasNull())
+                            return null;
+
+                        // if unhandled SQL type, fall back to examing object
+                        switch (obj_)
+                        {
+                            case byte[] buff_:
+                                return JavaUuidBytesToGuid(buff_);
+                        }
+
+                        throw new JdbcTypeException($"Could not coerce column type {ResultSet.getMetaData().getColumnTypeName(column)} into Guid.");
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JdbcException(e);
+            }
         }
 
         /// <inheritdoc />
@@ -2516,11 +2588,6 @@ namespace IKVM.Jdbc.Data
                 {
                     case Types.CHAR:
                     case Types.NCHAR:
-                        var char_ = (char)ResultSet.getByte(column);
-                        if (ResultSet.wasNull())
-                            throw new JdbcNullValueException();
-
-                        return char_.ToString();
                     case Types.VARCHAR:
                     case Types.NVARCHAR:
                     case Types.LONGVARCHAR:
@@ -2586,21 +2653,21 @@ namespace IKVM.Jdbc.Data
                 switch (ResultSet.getMetaData().getColumnType(column))
                 {
                     case Types.CHAR:
-                    case Types.NCHAR:
-                        var char_ = ResultSet.getByte(column);
-                        return ResultSet.wasNull() ? TextReader.Null : new System.IO.StringReader(((char)char_).ToString());
                     case Types.VARCHAR:
-                    case Types.NVARCHAR:
                     case Types.LONGVARCHAR:
+                        var chars_ = ResultSet.getCharacterStream(column);
+                        return ResultSet.wasNull() ? TextReader.Null : new JdbcTextReader(chars_);
+                    case Types.NCHAR:
+                    case Types.NVARCHAR:
                     case Types.LONGNVARCHAR:
-                        var reader_ = ResultSet.getCharacterStream(column);
-                        return ResultSet.wasNull() ? TextReader.Null : new JdbcTextReader(reader_);
+                        var nchars_ = ResultSet.getNCharacterStream(column);
+                        return ResultSet.wasNull() ? TextReader.Null : new JdbcTextReader(nchars_);
                     case Types.CLOB:
                         var clob = ResultSet.getClob(column);
                         return ResultSet.wasNull() ? TextReader.Null : new JdbcClobTextReader(ResultSet.getClob(column));
                     case Types.NCLOB:
                         var nclob = ResultSet.getNClob(column);
-                        return ResultSet.wasNull() ? TextReader.Null : new JdbcClobTextReader(ResultSet.getClob(column));
+                        return ResultSet.wasNull() ? TextReader.Null : new JdbcClobTextReader(ResultSet.getNClob(column));
                     default:
                         return base.GetTextReader(ordinal);
                 }
