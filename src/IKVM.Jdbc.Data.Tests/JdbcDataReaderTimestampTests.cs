@@ -12,7 +12,10 @@ namespace IKVM.Jdbc.Data.Tests
         static JdbcDataReaderTimestampTests()
         {
             ikvm.runtime.Startup.addBootClassPathAssembly(typeof(org.h2.Driver).Assembly);
+            GC.KeepAlive(org.h2.Driver.load());
+
             ikvm.runtime.Startup.addBootClassPathAssembly(typeof(org.hsqldb.jdbc.JDBCDriver).Assembly);
+            GC.KeepAlive(org.hsqldb.jdbc.JDBCDriver.driverInstance);
         }
 
         JdbcConnection CreateH2TestConnection()

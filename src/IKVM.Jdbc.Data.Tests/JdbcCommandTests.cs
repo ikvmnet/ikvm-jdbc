@@ -16,6 +16,8 @@ namespace IKVM.Jdbc.Data.Tests
         static JdbcCommandTests()
         {
             ikvm.runtime.Startup.addBootClassPathAssembly(typeof(org.h2.Driver).Assembly);
+            GC.KeepAlive(org.h2.Driver.load());
+
             ikvm.runtime.Startup.addBootClassPathAssembly(typeof(org.sqlite.JDBC).Assembly);
         }
 

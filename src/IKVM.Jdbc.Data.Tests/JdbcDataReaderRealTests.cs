@@ -10,6 +10,7 @@ namespace IKVM.Jdbc.Data.Tests
         static JdbcDataReaderRealTests()
         {
             ikvm.runtime.Startup.addBootClassPathAssembly(typeof(org.h2.Driver).Assembly);
+            GC.KeepAlive(org.h2.Driver.load());
         }
 
         JdbcConnection CreateH2TestConnection()
