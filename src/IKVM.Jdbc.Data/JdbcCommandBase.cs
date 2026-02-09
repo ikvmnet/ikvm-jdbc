@@ -348,7 +348,7 @@ namespace IKVM.Jdbc.Data
 
             if (value == null || value == DBNull.Value)
             {
-                statement.setNull(index, JdbcDbType.ToSqlType(type).ordinal());
+                statement.setNull(index, JdbcDbType.ToSqlType(type));
                 return;
             }
 
