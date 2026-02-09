@@ -330,7 +330,7 @@ namespace IKVM.Jdbc.Data
                 if (statement is not CallableStatement callableStatement)
                     throw new JdbcException("Cannot add output statement to non-callable statement.");
 
-                callableStatement.registerOutParameter(index + offset, JdbcDbType.ToJdbcType(parameter.DbType), parameter.Scale);
+                callableStatement.registerOutParameter(index + offset, JdbcDbType.ToSqlType(parameter.DbType), parameter.Scale);
             }
         }
 
@@ -348,7 +348,7 @@ namespace IKVM.Jdbc.Data
 
             if (value == null || value == DBNull.Value)
             {
-                statement.setNull(index, JdbcDbType.ToJdbcType(type).ordinal());
+                statement.setNull(index, JdbcDbType.ToSqlType(type).ordinal());
                 return;
             }
 
