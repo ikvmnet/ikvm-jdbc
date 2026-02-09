@@ -10,6 +10,7 @@ using ikvm.io;
 using java.io;
 using java.math;
 using java.sql;
+using java.time;
 
 namespace IKVM.Jdbc.Data
 {
@@ -17,8 +18,10 @@ namespace IKVM.Jdbc.Data
     /// <summary>
     /// Extension ethods for <see cref="Statement"/> instances.
     /// </summary>
-    public static class JdbcStatementExtensions
+    static class JdbcStatementExtensions
     {
+
+        static readonly Version JDBC_4_2 = new Version(4, 2);
 
         /// <summary>
         /// Sets the value of the parameter at the specified index to the given type and value.
@@ -27,10 +30,12 @@ namespace IKVM.Jdbc.Data
         /// <param name="index"></param>
         /// <param name="type"></param>
         /// <param name="value"></param>
-        public static void SetParameterValue(this PreparedStatement statement, int index, DbType type, object? value)
+        public static void SetParameterValue(this PreparedStatement statement, Version jdbcVersion, int index, DbType type, object? value)
         {
             if (statement is null)
                 throw new ArgumentNullException(nameof(statement));
+            if (jdbcVersion is null)
+                throw new ArgumentNullException(nameof(jdbcVersion));
 
             if (value == null || value == DBNull.Value)
             {
@@ -105,6 +110,17 @@ namespace IKVM.Jdbc.Data
                 case DbType.Date:
                     switch (value)
                     {
+#if NET
+                        case DateOnly d when jdbcVersion >= JDBC_4_2:
+                            statement.setObject(index, LocalDate.of(d.Year, d.Month, d.Day));
+                            break;
+                        case DateOnly d:
+                            statement.setDate(index, new Date(d.Year - 1900, d.Month - 1, d.Day));
+                            break;
+#endif
+                        case DateTime dt when jdbcVersion >= JDBC_4_2:
+                            statement.setObject(index, LocalDate.of(dt.Year, dt.Month, dt.Day));
+                            break;
                         case DateTime dt:
                             statement.setDate(index, new Date(new DateTimeOffset(dt).ToUnixTimeMilliseconds()));
                             break;
@@ -205,7 +221,7 @@ namespace IKVM.Jdbc.Data
                             statement.setInt(index, d);
                             break;
                         case long d:
-                            statement.setInt(index, (int)d);
+                            statement.setInt(index, checked((int)d));
                             break;
                         default:
                             throw new JdbcException("Invalid parameter.");
@@ -277,24 +293,84 @@ namespace IKVM.Jdbc.Data
                 case DbType.Time:
                     switch (value)
                     {
-                        case TimeSpan t:
-                            statement.setTime(index, new Time(new DateTimeOffset(new DateTime(1970, 1, 1).Add(t)).ToUnixTimeMilliseconds()));
-                            break;
-#if NET6_0_OR_GREATER
+#if NET
                         case TimeOnly t:
                             statement.setTime(index, new Time(new DateTimeOffset(new DateTime(1970, 1, 1).Add(t.ToTimeSpan())).ToUnixTimeMilliseconds()));
                             break;
 #endif
+                        case TimeSpan t:
+                            statement.setTime(index, new Time(new DateTimeOffset(new DateTime(1970, 1, 1).Add(t)).ToUnixTimeMilliseconds()));
+                            break;
                         default:
                             throw new JdbcException("Invalid parameter.");
                     }
                     break;
                 case DbType.UInt16:
-                    throw new NotSupportedException("Unsupported DbType UInt16.");
+                    switch (value)
+                    {
+                        case byte byte_:
+                            statement.setShort(index, byte_);
+                            break;
+                        case short short_:
+                            statement.setShort(index, short_);
+                            break;
+                        case int int_ when int_ <= short.MaxValue && int_ >= short.MinValue:
+                            statement.setShort(index, checked((short)int_));
+                            break;
+                        case long long_ when long_ <= short.MaxValue && long_ >= short.MinValue:
+                            statement.setShort(index, checked((short)long_));
+                            break;
+                        case ushort ushort_ when ushort_ <= short.MaxValue:
+                            statement.setShort(index, checked((short)ushort_));
+                            break;
+                        default:
+                            throw new JdbcTypeException("Coercion of UInt16 to Java 'short' failed: out of range");
+                    }
+                    break;
                 case DbType.UInt32:
-                    throw new NotSupportedException("Unsupported DbType UInt32.");
+                    switch (value)
+                    {
+                        case byte byte_:
+                            statement.setInt(index, byte_);
+                            break;
+                        case short short_:
+                            statement.setInt(index, short_);
+                            break;
+                        case int int_:
+                            statement.setInt(index, int_);
+                            break;
+                        case long long_ when long_ <= int.MaxValue && long_ >= int.MinValue:
+                            statement.setInt(index, checked((short)long_));
+                            break;
+                        case uint uint_ when uint_ <= int.MaxValue:
+                            statement.setInt(index, checked((int)uint_));
+                            break;
+                        default:
+                            throw new JdbcTypeException("Coercion of UInt32 to Java 'int' failed: out of range");
+                    }
+                    break;
                 case DbType.UInt64:
-                    throw new NotSupportedException("Unsupported DbType UInt64.");
+                    switch (value)
+                    {
+                        case byte byte_:
+                            statement.setLong(index, byte_);
+                            break;
+                        case short short_:
+                            statement.setLong(index, short_);
+                            break;
+                        case int int_:
+                            statement.setLong(index, int_);
+                            break;
+                        case long long_:
+                            statement.setLong(index, long_);
+                            break;
+                        case ulong ulong_ when ulong_ <= long.MaxValue:
+                            statement.setLong(index, checked((long)ulong_));
+                            break;
+                        default:
+                            throw new JdbcException("Coercion of UInt64 to Int64 failed: out of range");
+                    }
+                    break;
                 case DbType.VarNumeric:
                     throw new NotSupportedException("Unsupported DbType VarNumeric.");
                 case DbType.AnsiStringFixedLength:

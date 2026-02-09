@@ -307,7 +307,7 @@ namespace IKVM.Jdbc.Data
             // if parameter is to be used as input, set the value based on the index
             if (parameter.Direction == ParameterDirection.Input || parameter.Direction == ParameterDirection.InputOutput)
             {
-                statement.SetParameterValue(index + offset, parameter.DbType, parameter.Value);
+                statement.SetParameterValue(index + offset, _connection.JdbcVersion, parameter.DbType, parameter.Value);
                 return;
             }
 
