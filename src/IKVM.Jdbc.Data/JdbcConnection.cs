@@ -263,6 +263,9 @@ namespace IKVM.Jdbc.Data
             if (_transaction != null)
                 throw new JdbcException("JDBC only supports a single ambient transaction.");
 
+            if (JdbcConnection.getMetaData().supportsTransactions() == false)
+                throw new JdbcException("JDBC driver does not support transactions.");
+
             try
             {
                 return _transaction = new JdbcTransaction(this, isolationLevel);

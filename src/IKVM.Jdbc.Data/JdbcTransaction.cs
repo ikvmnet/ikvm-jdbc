@@ -14,6 +14,23 @@ namespace IKVM.Jdbc.Data
     public class JdbcTransaction : DbTransaction
     {
 
+        /// <summary>
+        /// Gets a JDBC isolation level for the specified ADO.NET isolation level.
+        /// </summary>
+        /// <param name="level"></param>
+        /// <returns></returns>
+        /// <exception cref="JdbcException"></exception>
+        static int GetJdbcIsolationLevel(IsolationLevel level) => level switch
+        {
+            IsolationLevel.Unspecified => java.sql.Connection.TRANSACTION_NONE,
+            IsolationLevel.Chaos => java.sql.Connection.TRANSACTION_NONE,
+            IsolationLevel.ReadUncommitted => java.sql.Connection.TRANSACTION_READ_UNCOMMITTED,
+            IsolationLevel.ReadCommitted => java.sql.Connection.TRANSACTION_READ_COMMITTED,
+            IsolationLevel.RepeatableRead => java.sql.Connection.TRANSACTION_REPEATABLE_READ,
+            IsolationLevel.Serializable => java.sql.Connection.TRANSACTION_SERIALIZABLE,
+            _ => throw new JdbcException("Unsupported IsolationLevel for JDBC."),
+        };
+
         readonly JdbcConnection _connection;
         readonly Dictionary<string, Savepoint> _savepoints = new();
 
@@ -26,28 +43,18 @@ namespace IKVM.Jdbc.Data
         {
             _connection = connection ?? throw new ArgumentNullException(nameof(connection));
 
-            if (_connection._connection is null)
-                throw new InvalidOperationException();
+            var jdbcConnection = _connection.JdbcConnection;
 
-            if (_connection._connection.getAutoCommit() == false)
-                throw new JdbcException("A JDBC transaction is already open.");
-            else
-            {
-                // set isolation level
-                _connection._connection.setTransactionIsolation(isolationLevel switch
-                {
-                    IsolationLevel.Unspecified => java.sql.Connection.TRANSACTION_NONE,
-                    IsolationLevel.Chaos => java.sql.Connection.TRANSACTION_NONE,
-                    IsolationLevel.ReadUncommitted => java.sql.Connection.TRANSACTION_READ_UNCOMMITTED,
-                    IsolationLevel.ReadCommitted => java.sql.Connection.TRANSACTION_READ_COMMITTED,
-                    IsolationLevel.RepeatableRead => java.sql.Connection.TRANSACTION_REPEATABLE_READ,
-                    IsolationLevel.Serializable => java.sql.Connection.TRANSACTION_SERIALIZABLE,
-                    _ => throw new JdbcException("Unsupported IsolationLevel for JDBC."),
-                });
+            // check whether isolation level is supported
+            var level = GetJdbcIsolationLevel(isolationLevel);
+            if (level != java.sql.Connection.TRANSACTION_NONE && jdbcConnection.getMetaData().supportsTransactionIsolationLevel(level) == false)
+                throw new JdbcException("JDBC driver does not support the specified IsolationLevel.");
 
-                // disable auto commit
-                _connection._connection.setAutoCommit(false);
-            }
+            // set isolation level
+            jdbcConnection.setTransactionIsolation(level);
+
+            // disable auto commit
+            jdbcConnection.setAutoCommit(false);
         }
 
         /// <summary>
