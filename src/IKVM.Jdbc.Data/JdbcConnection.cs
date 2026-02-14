@@ -12,7 +12,7 @@ namespace IKVM.Jdbc.Data
     /// <summary>
     /// ADO.NET wrapper for an underlying JDBC connection.
     /// </summary>
-    public class JdbcConnection : DbConnection
+    public class JdbcConnection : JdbcConnectionBase
     {
 
         internal string? _url;
@@ -100,10 +100,23 @@ namespace IKVM.Jdbc.Data
         Version GetJdbcVersion()
         {
             if (_connection is null)
-                throw new InvalidOperationException();
+                throw new JdbcException("JDBC connection is not yet constructed.");
 
             var md = _connection.getMetaData();
             return new Version(md.getJDBCMajorVersion(), md.getJDBCMinorVersion());
+        }
+
+        /// <summary>
+        /// Gets the JDBC connection.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        protected override Connection GetJdbcConnection()
+        {
+            if (_connection is null)
+                throw new JdbcException("JDBC connection is not yet constructed.");
+
+            return _connection;
         }
 
         /// <summary>
