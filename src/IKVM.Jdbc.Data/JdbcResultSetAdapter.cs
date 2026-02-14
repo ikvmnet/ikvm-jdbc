@@ -47,6 +47,11 @@ namespace IKVM.Jdbc.Data
         public int FieldCount => _resultSet.getMetaData().getColumnCount();
 
         /// <summary>
+        /// Gets a value indicating whether the result set is closed.
+        /// </summary>
+        public bool IsClosed => _resultSet.isClosed();
+
+        /// <summary>
         /// Gets the value of the specified column as an instance of <see cref="object"/>.
         /// </summary>
         /// <param name="ordinal"></param>

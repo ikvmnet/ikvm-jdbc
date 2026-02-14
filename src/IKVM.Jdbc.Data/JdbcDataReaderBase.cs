@@ -119,7 +119,7 @@ namespace IKVM.Jdbc.Data
         public override bool HasRows => _hasRows;
 
         /// <inheritdoc />
-        public override bool IsClosed => JdbcResultSet.isClosed();
+        public override bool IsClosed => ResultSetAdapter.IsClosed;
 
         /// <inheritdoc />
         public override int RecordsAffected => _updateCount;
