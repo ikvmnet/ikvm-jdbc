@@ -220,10 +220,9 @@ namespace IKVM.Jdbc.Data
             try
             {
                 if (_leaveOpen == false)
-                {
                     _connection.close();
-                    _connection = null;
-                }
+
+                _connection = null;
             }
             catch (SQLException e)
             {
