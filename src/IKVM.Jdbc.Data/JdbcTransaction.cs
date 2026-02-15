@@ -20,10 +20,9 @@ namespace IKVM.Jdbc.Data
         /// <param name="level"></param>
         /// <returns></returns>
         /// <exception cref="JdbcException"></exception>
-        static int GetJdbcIsolationLevel(IsolationLevel level) => level switch
+        static int GetJdbcIsolationLevel(Connection connection, IsolationLevel level) => level switch
         {
-            IsolationLevel.Unspecified => java.sql.Connection.TRANSACTION_NONE,
-            IsolationLevel.Chaos => java.sql.Connection.TRANSACTION_NONE,
+            IsolationLevel.Unspecified => connection.getMetaData().getDefaultTransactionIsolation(),
             IsolationLevel.ReadUncommitted => java.sql.Connection.TRANSACTION_READ_UNCOMMITTED,
             IsolationLevel.ReadCommitted => java.sql.Connection.TRANSACTION_READ_COMMITTED,
             IsolationLevel.RepeatableRead => java.sql.Connection.TRANSACTION_REPEATABLE_READ,
@@ -46,8 +45,8 @@ namespace IKVM.Jdbc.Data
             var jdbcConnection = _connection.JdbcConnection;
 
             // check whether isolation level is supported
-            var level = GetJdbcIsolationLevel(isolationLevel);
-            if (level != java.sql.Connection.TRANSACTION_NONE && jdbcConnection.getMetaData().supportsTransactionIsolationLevel(level) == false)
+            var level = GetJdbcIsolationLevel(jdbcConnection, isolationLevel);
+            if (jdbcConnection.getMetaData().supportsTransactionIsolationLevel(level) == false)
                 throw new JdbcException("JDBC driver does not support the specified IsolationLevel.");
 
             // set isolation level
