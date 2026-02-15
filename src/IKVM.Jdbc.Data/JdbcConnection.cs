@@ -15,11 +15,23 @@ namespace IKVM.Jdbc.Data
     public class JdbcConnection : JdbcConnectionBase
     {
 
-        internal bool _fromUrl;
-        internal string? _url;
-        internal IReadOnlyDictionary<string, string>? _properties;
-        internal java.sql.Connection? _connection;
-        readonly bool _leaveOpen;
+        /// <summary>
+        /// Data to open from a URL.
+        /// </summary>
+        (string? Url, IReadOnlyDictionary<string, string>? Properties)? _openFromUrl;
+
+        /// <summary>
+        /// Function to open a new connection with.
+        /// </summary>
+        Func<Connection>? _openFromFunc;
+
+        /// <summary>
+        /// Open based on a single existing connection.
+        /// </summary>
+        (Connection Connection, bool LeaveOpen)? _openFromConnection;
+
+        internal Connection? _connection;
+        internal bool _leaveOpen = false;
         internal JdbcTransaction? _transaction;
 
         Version? _jdbcVersion;
@@ -33,7 +45,7 @@ namespace IKVM.Jdbc.Data
         }
 
         /// <summary>
-        /// Initializes a new instance.
+        /// Initializes a new instance from a URL and properties.
         /// </summary>
         /// <param name="url"></param>
         /// <param name="properties"></param>
@@ -43,9 +55,7 @@ namespace IKVM.Jdbc.Data
             if (url is null)
                 throw new ArgumentNullException(nameof(url));
 
-            _fromUrl = true;
-            _url = url;
-            _properties = properties;
+            _openFromUrl = (url, properties);
         }
 
         /// <summary>
@@ -55,8 +65,19 @@ namespace IKVM.Jdbc.Data
         public JdbcConnection(string url) :
             this(url, null)
         {
-            if (url is null)
-                throw new ArgumentNullException(nameof(url));
+
+        }
+
+        /// <summary>
+        /// Initializes a new instance that opens from a function that delivers a connection.
+        /// </summary>
+        /// <param name="openFunc"></param>
+        public JdbcConnection(Func<Connection> openFunc)
+        {
+            if (openFunc is null)
+                throw new ArgumentNullException(nameof(openFunc));
+
+            _openFromFunc = openFunc;
         }
 
         /// <summary>
@@ -69,10 +90,7 @@ namespace IKVM.Jdbc.Data
             if (connection is null)
                 throw new ArgumentNullException(nameof(connection));
 
-            _fromUrl = false;
-            _url = connection.getMetaData().getURL();
-            _connection = connection;
-            _leaveOpen = leaveOpen;
+            _openFromConnection = (connection, leaveOpen);
         }
 
         /// <summary>
@@ -83,12 +101,12 @@ namespace IKVM.Jdbc.Data
         /// <summary>
         /// Gets or sets the connection string.
         /// </summary>
-        internal string? Url => _url;
+        internal string? Url => _openFromUrl.HasValue ? _openFromUrl.Value.Url : _connection?.getMetaData().getURL();
 
         /// <summary>
         /// Gets or sets the connection properties.
         /// </summary>
-        public IReadOnlyDictionary<string, string>? Properties => _properties;
+        public IReadOnlyDictionary<string, string>? Properties => _openFromUrl.HasValue ? _openFromUrl.Value.Properties : null;
 
         /// <summary>
         /// Gets the JDBC version.
@@ -130,7 +148,7 @@ namespace IKVM.Jdbc.Data
 #endif
         public override string ConnectionString
         {
-            get => _url ?? _connection?.getMetaData().getURL() ?? "";
+            get => Url ?? "";
             set => SetUrl(value ?? "");
         }
 
@@ -144,9 +162,10 @@ namespace IKVM.Jdbc.Data
             if (State != ConnectionState.Closed)
                 throw new JdbcException("Connection must be closed to update connection string.");
 
-            // reset connection string
-            _url = url;
-            _connection = null;
+            // reset to open from URL
+            _openFromUrl = (url, _openFromUrl?.Properties);
+            _openFromFunc = null;
+            _openFromConnection = null;
         }
 
         /// <summary>
@@ -201,7 +220,10 @@ namespace IKVM.Jdbc.Data
             try
             {
                 if (_leaveOpen == false)
+                {
                     _connection.close();
+                    _connection = null;
+                }
             }
             catch (SQLException e)
             {
@@ -219,22 +241,39 @@ namespace IKVM.Jdbc.Data
             if (State == ConnectionState.Open)
                 throw new InvalidOperationException("Connection is already open.");
 
-            // was open at one time
-            if (_fromUrl == false)
-                throw new JdbcException("Cannot open a connection initialized with an underlying JDBC connection. The connection begins in the Open state.");
-
-            // haven't configured the connection string
-            if (_url == null)
-                throw new JdbcException("JDBC URL has not been configured.");
-
             try
             {
-                var props = new java.util.Properties();
-                if (_properties is not null)
-                    foreach (var entry in _properties)
-                        props.setProperty(entry.Key, entry.Value);
+                // we have a URL to open with
+                if (_openFromUrl.HasValue)
+                {
+                    var props = new java.util.Properties();
+                    if (_openFromUrl.Value.Properties is not null)
+                        foreach (var entry in _openFromUrl.Value.Properties)
+                            props.setProperty(entry.Key, entry.Value);
 
-                _connection = DriverManager.getConnection(_url, props);
+                    _connection = DriverManager.getConnection(_openFromUrl.Value.Url, props);
+                    _leaveOpen = false;
+                    return;
+                }
+
+                // we have a function to open with
+                if (_openFromFunc != null)
+                {
+                    _connection = _openFromFunc();
+                    _leaveOpen = false;
+                    return;
+                }
+
+                // we open from a single connection
+                if (_openFromConnection.HasValue)
+                {
+                    _connection = _openFromConnection.Value.Connection;
+                    _leaveOpen = _openFromConnection.Value.LeaveOpen;
+                    _openFromConnection = null;
+                    return;
+                }
+
+                throw new JdbcException("Cannot open a connection. No remaining methods to open.");
             }
             catch (SQLException e)
             {
