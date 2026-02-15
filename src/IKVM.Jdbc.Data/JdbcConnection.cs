@@ -75,7 +75,7 @@ namespace IKVM.Jdbc.Data
         /// <summary>
         /// Gets the state of the connection.
         /// </summary>
-        public override ConnectionState State => _connection == null ? ConnectionState.Closed : _connection.isClosed() ? ConnectionState.Closed : ConnectionState.Open;
+        public override ConnectionState State => _connection == null ? ConnectionState.Closed : (_connection.isClosed() ? ConnectionState.Closed : ConnectionState.Open);
 
         /// <summary>
         /// Gets or sets the connection string.
