@@ -83,6 +83,40 @@ namespace IKVM.Jdbc.Data.Tests
             rdr.GetFieldValue<int?>(0).Should().BeNull();
         }
 
+        [TestMethod]
+        public void CanGetInsertCountFromExecuteNonQuery()
+        {
+            using var cnn = CreateSqliteTestConnection();
+            cnn.Open();
+
+            using var cmd = cnn.CreateCommand();
+            cmd.CommandText = "drop table if exists CanGetInsertCountFromExecuteNonQuery";
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "create table CanGetInsertCountFromExecuteNonQuery (id integer)";
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "insert into CanGetInsertCountFromExecuteNonQuery values (null)";
+            Assert.AreEqual(1, cmd.ExecuteNonQuery());
+        }
+
+        [TestMethod]
+        public void CanGetUpdateCountFromExecuteNonQuery()
+        {
+            using var cnn = CreateSqliteTestConnection();
+            cnn.Open();
+
+            using var cmd = cnn.CreateCommand();
+            cmd.CommandText = "drop table if exists CanGetUpdateCountFromExecuteNonQuery";
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "create table CanGetUpdateCountFromExecuteNonQuery (id integer, t char(1))";
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "insert into CanGetUpdateCountFromExecuteNonQuery values (1, 'A')";
+            Assert.AreEqual(1, cmd.ExecuteNonQuery());
+            cmd.CommandText = "update CanGetUpdateCountFromExecuteNonQuery SET t = 'B' WHERE id == 1";
+            Assert.AreEqual(1, cmd.ExecuteNonQuery());
+            cmd.CommandText = "update CanGetUpdateCountFromExecuteNonQuery SET t = 'B' WHERE id == 2";
+            Assert.AreEqual(0, cmd.ExecuteNonQuery());
+        }
+
     }
 
 }
