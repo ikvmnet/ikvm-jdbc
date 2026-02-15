@@ -15,6 +15,7 @@ namespace IKVM.Jdbc.Data
     public class JdbcConnection : JdbcConnectionBase
     {
 
+        internal bool _fromUrl;
         internal string? _url;
         internal IReadOnlyDictionary<string, string>? _properties;
         internal java.sql.Connection? _connection;
@@ -42,6 +43,7 @@ namespace IKVM.Jdbc.Data
             if (url is null)
                 throw new ArgumentNullException(nameof(url));
 
+            _fromUrl = true;
             _url = url;
             _properties = properties;
         }
@@ -67,6 +69,7 @@ namespace IKVM.Jdbc.Data
             if (connection is null)
                 throw new ArgumentNullException(nameof(connection));
 
+            _fromUrl = false;
             _url = connection.getMetaData().getURL();
             _connection = connection;
             _leaveOpen = leaveOpen;
@@ -75,7 +78,7 @@ namespace IKVM.Jdbc.Data
         /// <summary>
         /// Gets the state of the connection.
         /// </summary>
-        public override ConnectionState State => _connection == null ? ConnectionState.Closed : (_connection.isClosed() ? ConnectionState.Closed : ConnectionState.Open);
+        public override ConnectionState State => _connection != null && _connection.isClosed() == false ? ConnectionState.Open : ConnectionState.Closed;
 
         /// <summary>
         /// Gets or sets the connection string.
@@ -213,16 +216,12 @@ namespace IKVM.Jdbc.Data
         public override void Open()
         {
             // already open
-            if (_connection != null && State == ConnectionState.Open)
-                return;
-
-            // already open
-            if (_connection != null && State == ConnectionState.Connecting)
-                return;
+            if (State == ConnectionState.Open)
+                throw new InvalidOperationException("Connection is already open.");
 
             // was open at one time
-            if (_connection != null)
-                throw new JdbcException("Connection has already been opened.");
+            if (_fromUrl == false)
+                throw new JdbcException("Cannot open a connection initialized with an underlying JDBC connection. The connection begins in the Open state.");
 
             // haven't configured the connection string
             if (_url == null)

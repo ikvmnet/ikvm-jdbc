@@ -25,11 +25,35 @@ namespace IKVM.Jdbc.Data.Tests
         }
 
         [TestMethod]
+        public void CanOpen()
+        {
+            using var cnn = CreateTestConnection();
+            Assert.AreEqual(System.Data.ConnectionState.Closed, cnn.State);
+            cnn.Open();
+            Assert.AreEqual(System.Data.ConnectionState.Open, cnn.State);
+        }
+
+        [TestMethod]
+        public void CanOpenAndCloseAndOpenAndClose()
+        {
+            using var cnn = CreateTestConnection();
+            Assert.AreEqual(System.Data.ConnectionState.Closed, cnn.State);
+            cnn.Open();
+            Assert.AreEqual(System.Data.ConnectionState.Open, cnn.State);
+            cnn.Close();
+            Assert.AreEqual(System.Data.ConnectionState.Closed, cnn.State);
+            cnn.Open();
+            Assert.AreEqual(System.Data.ConnectionState.Open, cnn.State);
+            cnn.Close();
+            Assert.AreEqual(System.Data.ConnectionState.Closed, cnn.State);
+        }
+
+        [TestMethod]
         public void CanConnect()
         {
             using var cnn = CreateTestConnection();
             cnn.Open();
-            cnn.State.Should().Be(System.Data.ConnectionState.Open);
+            Assert.AreEqual(System.Data.ConnectionState.Open, cnn.State);
         }
 
         [TestMethod]
@@ -37,7 +61,7 @@ namespace IKVM.Jdbc.Data.Tests
         {
             using var cnn = CreateTestConnection();
             await cnn.OpenAsync();
-            cnn.State.Should().Be(System.Data.ConnectionState.Open);
+            Assert.AreEqual(System.Data.ConnectionState.Open, cnn.State);
         }
 
         [TestMethod]
