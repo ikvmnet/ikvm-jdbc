@@ -226,11 +226,21 @@ namespace IKVM.Jdbc.Data
         }
 
         /// <summary>
+        /// Gets the provider specific type of the field.
+        /// </summary>
+        /// <param name="ordinal"></param>
+        /// <returns></returns>
+        public Type GetProviderSpecificFieldType(int ordinal)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
         /// Calls 'getObject' on the underlying <see cref="_resultSet"/>, simply returning the underlying Java object.
         /// </summary>
         /// <param name="ordinal"></param>
         /// <returns></returns>
-        public object? GetObject(int ordinal)
+        public object GetProviderSpecificValue(int ordinal)
         {
             if (ordinal < 0)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
@@ -241,7 +251,7 @@ namespace IKVM.Jdbc.Data
             {
                 var column = ordinal + 1;
                 var object_ = _resultSet.getObject(column);
-                return _resultSet.wasNull() ? null : object_;
+                return _resultSet.wasNull() ? DBNull.Value : object_;
             }
             catch (SQLException e)
             {
@@ -254,7 +264,7 @@ namespace IKVM.Jdbc.Data
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public object? GetObject(string name)
+        public object GetProviderSpecificValue(string name)
         {
             if (name is null)
                 throw new ArgumentNullException(nameof(name));
@@ -262,7 +272,7 @@ namespace IKVM.Jdbc.Data
             try
             {
                 var object_ = _resultSet.getObject(name);
-                return _resultSet.wasNull() ? null : object_;
+                return _resultSet.wasNull() ? DBNull.Value : object_;
             }
             catch (SQLException e)
             {
@@ -353,7 +363,7 @@ namespace IKVM.Jdbc.Data
                         return _resultSet.wasNull() ? DBNull.Value : XDocument.Parse(sqlxml_.getString());
                     case Types.STRUCT:
                     case Types.JAVA_OBJECT:
-                        return GetObject(column) ?? DBNull.Value;
+                        return GetProviderSpecificValue(column) ?? DBNull.Value;
                     case Types.ARRAY:
                         var array_ = _resultSet.getArray(column);
                         return _resultSet.wasNull() ? DBNull.Value : array_.getArray();
